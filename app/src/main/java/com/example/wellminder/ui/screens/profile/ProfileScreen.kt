@@ -1,0 +1,293 @@
+package com.example.wellminder.ui.screens.profile
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.wellminder.ui.components.BottomNavigationBar
+import com.example.wellminder.ui.components.TopBarSection
+import com.example.wellminder.ui.theme.Typography
+
+import androidx.compose.runtime.LaunchedEffect
+import androidx.hilt.navigation.compose.hiltViewModel
+
+@Composable
+fun ProfileScreen(
+    onNavigate: (String) -> Unit,
+    viewModel: ProfileViewModel = hiltViewModel()
+) {
+    val scrollState = rememberScrollState()
+    var showHealthConnect by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showChangeGoals by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showAccountInfo by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showEditAccountData by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showDeleteDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showLogoutDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
+    LaunchedEffect(key1 = true) {
+        viewModel.navigationEvent.collect { route ->
+            if (route == "login") {
+                onNavigate("login")
+            }
+        }
+    }
+
+    if (showHealthConnect) {
+        BackHandler { showHealthConnect = false }
+        HealthConnectScreen(onBack = { showHealthConnect = false })
+        return
+    }
+
+    if (showChangeGoals) {
+        BackHandler { showChangeGoals = false }
+        ChangeGoalsScreen(
+            onFinish = {
+                showChangeGoals = false
+                android.widget.Toast.makeText(context, "Ваші цілі були змінені", android.widget.Toast.LENGTH_SHORT).show()
+            },
+            viewModel = viewModel
+        )
+        return
+    }
+
+    if (showEditAccountData) {
+        BackHandler { showEditAccountData = false }
+        EditAccountDataScreen(
+            onSave = {
+                showEditAccountData = false
+                showAccountInfo = false // Return to main profile
+                android.widget.Toast.makeText(context, "Ваші дані змінені", android.widget.Toast.LENGTH_SHORT).show()
+            },
+            viewModel = viewModel
+        )
+        return
+    }
+
+    if (showDeleteDialog) {
+        DeleteAccountDialog(
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = { 
+                showDeleteDialog = false
+                viewModel.deleteAccount()
+            }
+        )
+    }
+
+    if (showLogoutDialog) {
+        LogoutDialog(
+            onDismiss = { showLogoutDialog = false },
+            onConfirm = {
+                showLogoutDialog = false
+                viewModel.logout()
+            }
+        )
+    }
+
+    Scaffold(
+        containerColor = Color(0xFFEFF5FF),
+        bottomBar = {
+            BottomNavigationBar(
+                currentRoute = "profile",
+                onNavigate = onNavigate
+            )
+        }
+    ) { paddingValues ->
+        if (showAccountInfo) {
+            BackHandler { showAccountInfo = false }
+            Box(modifier = Modifier.padding(paddingValues)) {
+                AccountInfoScreen(
+                    onBack = { showAccountInfo = false },
+                    onEdit = { showEditAccountData = true },
+                    name = viewModel.userProfile?.name ?: "Гість",
+                    email = viewModel.userEmail ?: "не вказано"
+                )
+            }
+        } else {
+             Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TopBarSection()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // User Info Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(4.dp, RoundedCornerShape(32.dp))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        text = "Про Вас",
+                        style = Typography.titleMedium.copy(fontSize = 20.sp),
+                        color = Color.Black
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    UserInfoRow("І'мя:", viewModel.userProfile?.name ?: "Гість")
+                    UserInfoRow("Стать:", viewModel.userProfile?.gender ?: "-")
+                    UserInfoRow("Поточна вага:", "${viewModel.userProfile?.currentWeight?.toInt() ?: 0}кг")
+                    val goalText = when(viewModel.userGoals?.goalType) {
+                        "LOSE" -> "схуднути"
+                        "GAIN" -> "набрати вагу"
+                        else -> "підтримувати форму"
+                    }
+                    UserInfoRow("Мета:", goalText)
+                    // Calculate age from birthDate
+                    val age = if (viewModel.userProfile?.dateOfBirth != null && viewModel.userProfile!!.dateOfBirth > 0) {
+                         val birthDate = java.time.Instant.ofEpochMilli(viewModel.userProfile!!.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                         val now = java.time.LocalDate.now()
+                         java.time.Period.between(birthDate, now).years.toString()
+                    } else "0"
+                    
+                    UserInfoRow("вік:", age)
+                    UserInfoRow("Зріст:", "${viewModel.userProfile?.height ?: 0}")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Action Buttons
+            ProfileActionButton(
+                text = "Дані про акаунт",
+                icon = Icons.Default.Email,
+                onClick = { showAccountInfo = true }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            ProfileActionButton(
+                text = "Змінити персональні цілі",
+                icon = Icons.Default.Refresh,
+                onClick = { showChangeGoals = true }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            ProfileActionButton(
+                text = "З'єднання з Health Connect",
+                icon = Icons.Default.Favorite, // Using Favorite as placeholder for Health Connect
+                onClick = { showHealthConnect = true }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Logout Button
+            ProfileActionButton(
+                text = "Вийти з акаунту",
+                icon = Icons.Filled.Close,
+                onClick = { showLogoutDialog = true },
+                containerColor = Color(0xFFFF8A00)
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            ProfileActionButton(
+                text = "Видалити акаунт",
+                icon = Icons.Default.Delete,
+                onClick = { showDeleteDialog = true },
+                containerColor = Color(0xFFD32F2F) // Red for delete
+            )
+            
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+    }
+}
+
+@Composable
+fun UserInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = "$label ",
+            style = Typography.bodyMedium,
+            color = Color.Black
+        )
+        Text(
+            text = value,
+            style = Typography.bodyMedium,
+            color = Color.Black // Or maybe a slightly lighter color if needed
+        )
+    }
+}
+
+@Composable
+fun ProfileActionButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    containerColor: Color = Color(0xFFFF8A00)
+) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = containerColor),
+        shape = RoundedCornerShape(32.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(4.dp, RoundedCornerShape(32.dp)),
+        contentPadding = PaddingValues(horizontal = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.Black, // Icon color black as per screenshot
+                modifier = Modifier.size(24.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Text(
+                text = text,
+                style = Typography.bodyMedium.copy(fontSize = 16.sp),
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
