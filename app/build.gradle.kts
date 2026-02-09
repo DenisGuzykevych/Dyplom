@@ -40,14 +40,7 @@ android {
         compose = true
     }
     
-    sourceSets {
-        getByName("debug") {
-            java.srcDir("build/generated/ksp/debug/java")
-        }
-        getByName("release") {
-            java.srcDir("build/generated/ksp/release/java")
-        }
-    }
+
 }
 
 // KSP config removed
