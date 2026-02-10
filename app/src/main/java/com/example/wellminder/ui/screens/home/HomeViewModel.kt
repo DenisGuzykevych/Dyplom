@@ -70,6 +70,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+
     fun fetchSteps() {
         viewModelScope.launch {
             if (userId == -1L) return@launch
