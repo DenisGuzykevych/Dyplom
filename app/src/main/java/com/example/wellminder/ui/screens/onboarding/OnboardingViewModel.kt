@@ -55,6 +55,15 @@ class OnboardingViewModel @Inject constructor(
                         dateOfBirth = dobTimestamp
                     )
                     userDao.updateProfile(updatedProfile)
+                    
+                    // Insert Weight Log for the initial weight
+                    userDao.insertWeightLog(
+                        com.example.wellminder.data.local.entities.WeightLogEntity(
+                            userId = updatedProfile.userId,
+                            date = System.currentTimeMillis(),
+                            weightValue = weight
+                        )
+                    )
                 }
                 
                 preferenceManager.isOnboardingComplete = true

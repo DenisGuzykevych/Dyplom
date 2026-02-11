@@ -55,6 +55,9 @@ fun HomeScreen(
     var showStepsOverlay by remember { mutableStateOf(false) }
     var showAddFoodOverlay by remember { mutableStateOf(false) }
     var stepCount by remember { mutableIntStateOf(0) }
+
+    val consumedCalories = viewModel.consumedCalories
+    val targetCalories = viewModel.targetCalories
     
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract()
@@ -116,9 +119,9 @@ fun HomeScreen(
                 title = "Норма калорій",
                 icon = Icons.Rounded.Bolt,
                 iconColor = Color(0xFFFFC107),
-                progress = 0f,
+                progress = if (targetCalories > 0) consumedCalories.toFloat() / targetCalories.toFloat() else 0f,
                 progressColor = Color(0xFF4CAF50), // Green for calories
-                subtitle = "Спожито 0ккал\nз 2500ккал",
+                subtitle = "Спожито ${consumedCalories}ккал\nз ${targetCalories}ккал",
                 onClick = { showCaloriesOverlay = true }
             )
             
@@ -137,9 +140,22 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Food Section
+            // Food Section
+            var selectedMealForAdd by remember { mutableStateOf<com.example.wellminder.ui.components.MealType?>(null) }
+            
             FoodSection(
-                onAddFood = { showAddFoodOverlay = true }
+                onAddFood = { meal -> 
+                    selectedMealForAdd = meal
+                    showAddFoodOverlay = true 
+                }
             )
+
+            if (showAddFoodOverlay && selectedMealForAdd != null) {
+                com.example.wellminder.ui.screens.food.ConsumedFoodOverlay(
+                    mealType = selectedMealForAdd!!.title,
+                    onDismiss = { showAddFoodOverlay = false }
+                )
+            }
             
 
             
@@ -161,6 +177,12 @@ fun HomeScreen(
 
         if (showCaloriesOverlay) {
             CaloriesOverlay(
+                currentProteins = viewModel.consumedProteins,
+                targetProteins = viewModel.targetProteins,
+                currentFats = viewModel.consumedFats,
+                targetFats = viewModel.targetFats,
+                currentCarbs = viewModel.consumedCarbs,
+                targetCarbs = viewModel.targetCarbs,
                 onDismiss = { showCaloriesOverlay = false }
             )
         }
@@ -178,12 +200,6 @@ fun HomeScreen(
             )
         }
 
-        if (showAddFoodOverlay) {
-            com.example.wellminder.ui.screens.food.AddFoodOverlay(
-                onDismiss = { showAddFoodOverlay = false },
-                onAdd = { /* TODO: Add logic */ showAddFoodOverlay = false }
-            )
-        }
     }
 
 
@@ -283,7 +299,7 @@ fun CircularProgress(
 
 @Composable
 fun FoodSection(
-    onAddFood: () -> Unit
+    onAddFood: (com.example.wellminder.ui.components.MealType) -> Unit
 ) {
     var selectedMeal by remember { mutableStateOf(com.example.wellminder.ui.components.MealType.BREAKFAST) }
     
@@ -291,7 +307,7 @@ fun FoodSection(
         selectedMeal = selectedMeal,
         onMealSelect = { 
             if (selectedMeal == it) {
-                onAddFood()
+                onAddFood(it)
             } else {
                 selectedMeal = it 
             }
@@ -325,11 +341,22 @@ fun FoodSection(
             }
         },
         footerContent = {
+             val tips = listOf(
+                 "Пийте достатньо води впродовж дня 💧",
+                 "Не пропускайте сніданок – це заряд енергії! 🍳",
+                 "Овочі та фрукти – запорука здоров'я 🍏",
+                 "Рух – це життя! Більше ходіть пішки 🚶",
+                 "Сон відновлює сили, спіть 7-8 годин 😴",
+                 "Уникайте надмірного цукру в напоях 🥤",
+                 "Готуйте вдома частіше, це корисно! 🥗"
+             )
+             val randomTip = remember { tips.random() }
+             
              Text(
-                 text = "Слідкуйте за своїм харчуванням\nдля кращого самопочуття!",
+                 text = randomTip,
                  modifier = Modifier.padding(16.dp),
                  textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                 style = Typography.bodyMedium
+                 style = Typography.bodyMedium.copy(color = Color.Gray)
              )
         }
     )

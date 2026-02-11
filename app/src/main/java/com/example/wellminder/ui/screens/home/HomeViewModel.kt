@@ -22,7 +22,8 @@ class HomeViewModel @Inject constructor(
     private val healthConnectManager: HealthConnectManager,
     private val statsRepository: StatsRepository,
     private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager,
-    private val userDao: com.example.wellminder.data.local.dao.UserDao
+    private val userDao: com.example.wellminder.data.local.dao.UserDao,
+    private val foodRepository: com.example.wellminder.data.repository.FoodRepository
 ) : ViewModel() {
 
     var steps by mutableIntStateOf(0)
@@ -33,21 +34,64 @@ class HomeViewModel @Inject constructor(
 
     val permissions = healthConnectManager.permissions
 
+    private val userId: Long
+        get() = preferenceManager.userId
+
     var stepsPerKm by mutableIntStateOf(1300)
         private set
 
     var distanceKm by mutableFloatStateOf(0f)
         private set
-        
-    private val userId: Long
-        get() = preferenceManager.userId
+
+    var consumedCalories by mutableIntStateOf(0)
+        private set
+    var consumedProteins by mutableFloatStateOf(0f)
+        private set
+    var consumedFats by mutableFloatStateOf(0f)
+        private set
+    var consumedCarbs by mutableFloatStateOf(0f)
+        private set
+
+    var targetCalories by mutableIntStateOf(2000) // Default
+        private set
+    var targetProteins by mutableFloatStateOf(100f)
+        private set
+    var targetFats by mutableFloatStateOf(70f)
+        private set
+    var targetCarbs by mutableFloatStateOf(250f)
+        private set
 
     init {
         viewModelScope.launch {
             preferenceManager.userIdFlow.collect { id ->
                 fetchSteps()
                 loadWaterAndStats(id)
+                observeFoodLogs()
             }
+        }
+    }
+
+    private fun observeFoodLogs() {
+        viewModelScope.launch {
+             foodRepository.getConsumedFoodForDate(LocalDate.now()).collect { logs ->
+                 var cals = 0
+                 var prot = 0f
+                 var fats = 0f
+                 var carbs = 0f
+                 
+                 logs.forEach { item ->
+                     val ratio = item.consumed.grams / 100f
+                     cals += ((item.nutrients?.calories ?: 0) * ratio).toInt()
+                     prot += (item.nutrients?.proteins ?: 0f) * ratio
+                     fats += (item.nutrients?.fats ?: 0f) * ratio
+                     carbs += (item.nutrients?.carbohydrates ?: 0f) * ratio
+                 }
+                 
+                 consumedCalories = cals
+                 consumedProteins = prot
+                 consumedFats = fats
+                 consumedCarbs = carbs
+             }
         }
     }
 
@@ -66,6 +110,22 @@ class HomeViewModel @Inject constructor(
                 val height = statsRepository.getUserHeight(id)
                 val stride = (height * 0.415) / 100.0
                 stepsPerKm = (1000 / stride).toInt()
+                
+                // Load Goals
+                val goals = userDao.getUserGoals(id)
+                if (goals != null) {
+                    targetCalories = goals.targetCalories
+                    // Simple macro split estimation if not stored (e.g. 20/30/50 split for now or similar)
+                    // P: 1g = 4kcal, F: 1g = 9kcal, C: 1g = 4kcal
+                    // Let's assume a standard split if not explicitly in goals (Goals entity only accepts targetCalories atm in snippet 87? 
+                    // No, wait, snippet 87 shows targetWeight, targetWaterMl, targetSteps, targetCalories. No specific macros.
+                    // So we estimate targets based on calories.
+                    
+                    // Example: Protein 20%, Fats 30%, Carbs 50%
+                    targetProteins = (targetCalories * 0.2f) / 4f
+                    targetFats = (targetCalories * 0.3f) / 9f
+                    targetCarbs = (targetCalories * 0.5f) / 4f
+                }
             }
         }
     }

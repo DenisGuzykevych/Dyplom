@@ -24,6 +24,12 @@ import com.example.wellminder.ui.theme.Typography
 
 @Composable
 fun CaloriesOverlay(
+    currentProteins: Float,
+    targetProteins: Float,
+    currentFats: Float,
+    targetFats: Float,
+    currentCarbs: Float,
+    targetCarbs: Float,
     onDismiss: () -> Unit
 ) {
     Dialog(
@@ -69,30 +75,30 @@ fun CaloriesOverlay(
                         // Proteins
                         NutrientItem(
                             title = "Білки",
-                            progress = 0.57f,
+                            progress = if (targetProteins > 0) currentProteins / targetProteins else 0f,
                             color = Color(0xFF4285F4), // Blue
-                            current = "48г",
-                            target = "84г",
+                            current = "${currentProteins.toInt()}г",
+                            target = "${targetProteins.toInt()}г",
                             modifier = Modifier.weight(1f)
                         )
                         
                         // Fats
                         NutrientItem(
                             title = "Жири",
-                            progress = 0.6f,
+                            progress = if (targetFats > 0) currentFats / targetFats else 0f,
                             color = Color(0xFFFBBC05), // Yellow/Orange
-                            current = "40г",
-                            target = "67г",
+                            current = "${currentFats.toInt()}г",
+                            target = "${targetFats.toInt()}г",
                             modifier = Modifier.weight(1f)
                         )
                         
                         // Carbs
                         NutrientItem(
                             title = "Вуглеводи",
-                            progress = 0.58f,
+                            progress = if (targetCarbs > 0) currentCarbs / targetCarbs else 0f,
                             color = Color(0xFF66BB6A), // Green
-                            current = "160г",
-                            target = "275г",
+                            current = "${currentCarbs.toInt()}г",
+                            target = "${targetCarbs.toInt()}г",
                             modifier = Modifier.weight(1f)
                         )
                     }

@@ -18,9 +18,13 @@ import com.example.wellminder.data.local.entities.WeightLogEntity
         UserGoalEntity::class, 
         WeightLogEntity::class,
         com.example.wellminder.data.local.entities.DailyStepsEntity::class,
-        com.example.wellminder.data.local.entities.WaterIntakeEntity::class
+        com.example.wellminder.data.local.entities.WaterIntakeEntity::class,
+        com.example.wellminder.data.local.entities.FoodCategoryEntity::class,
+        com.example.wellminder.data.local.entities.FoodNutrientEntity::class,
+        com.example.wellminder.data.local.entities.ConsumedFoodEntity::class,
+        com.example.wellminder.data.local.entities.DailySummaryEntity::class
     ], 
-    version = 8,
+    version = 13,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -28,4 +32,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun dailyStepsDao(): com.example.wellminder.data.local.dao.DailyStepsDao
     abstract fun waterDao(): com.example.wellminder.data.local.dao.WaterDao
+    abstract fun consumedFoodDao(): com.example.wellminder.data.local.dao.ConsumedFoodDao
+    abstract fun dailySummaryDao(): com.example.wellminder.data.local.dao.DailySummaryDao
 }

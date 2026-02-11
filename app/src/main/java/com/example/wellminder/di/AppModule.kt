@@ -61,7 +61,25 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideFoodDao(database: com.example.wellminder.data.local.AppDatabase): com.example.wellminder.data.local.dao.FoodDao {
+        return database.foodDao()
+    }
+
+    @Provides
+    @Singleton
     fun providePreferenceManager(@ApplicationContext context: Context): com.example.wellminder.data.manager.PreferenceManager {
         return com.example.wellminder.data.manager.PreferenceManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideConsumedFoodDao(database: com.example.wellminder.data.local.AppDatabase): com.example.wellminder.data.local.dao.ConsumedFoodDao {
+        return database.consumedFoodDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDailySummaryDao(database: com.example.wellminder.data.local.AppDatabase): com.example.wellminder.data.local.dao.DailySummaryDao {
+        return database.dailySummaryDao()
     }
 }

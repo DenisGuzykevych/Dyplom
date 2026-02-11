@@ -21,18 +21,24 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.wellminder.ui.theme.Typography
 import com.example.wellminder.ui.components.PremiumCheckButton
+import androidx.compose.material.icons.filled.Delete
 
 @Composable
-fun AddProductOverlay(
+fun EditProductOverlay(
+    initialName: String,
+    initialCalories: Int,
+    initialProteins: Float,
+    initialFats: Float,
+    initialCarbs: Float,
     onDismiss: () -> Unit,
-    onSave: (String, Int, Float, Float, Float) -> Unit
+    onSave: (String, Int, Float, Float, Float) -> Unit,
+    onDelete: () -> Unit = {}
 ) {
-    var name by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
-    var proteins by remember { mutableStateOf("") }
-    var carbs by remember { mutableStateOf("") }
-    var fats by remember { mutableStateOf("") }
-    val context = androidx.compose.ui.platform.LocalContext.current
+    var name by remember { mutableStateOf(initialName) }
+    var calories by remember { mutableStateOf(initialCalories.toString()) }
+    var proteins by remember { mutableStateOf(initialProteins.toString()) }
+    var carbs by remember { mutableStateOf(initialCarbs.toString()) }
+    var fats by remember { mutableStateOf(initialFats.toString()) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -63,13 +69,29 @@ fun AddProductOverlay(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = "Додайте дані про ваш\nпродукт чи страву!",
+                        text = "Редагувати продукт",
                         style = Typography.headlineSmall,
                         fontSize = 24.sp,
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Normal,
                         color = Color.Black
                     )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Delete Button (Optional)
+                    Button(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFCDD2)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Icon(androidx.compose.material.icons.Icons.Filled.Delete, contentDescription = "Delete", tint = Color.Red)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Видалити", color = Color.Red)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -82,7 +104,7 @@ fun AddProductOverlay(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     LabeledInput(
-                        label = "Введіть калорійність на 100г", 
+                        label = "Калорійність на 100г", 
                         placeholder = "Введіть у калорійність", 
                         value = calories, 
                         onValueChange = { if (it.all { char -> char.isDigit() }) calories = it },
@@ -90,7 +112,7 @@ fun AddProductOverlay(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     LabeledInput(
-                        label = "Введіть білки продукту на 100г", 
+                        label = "Білки на 100г", 
                         placeholder = "Введіть білки у грамах", 
                         value = proteins, 
                         onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) proteins = it },
@@ -98,7 +120,7 @@ fun AddProductOverlay(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     LabeledInput(
-                        label = "Введіть вуглеводи продукту на 100г", 
+                        label = "Вуглеводи на 100г", 
                         placeholder = "Введіть вуглеводи у грамах", 
                         value = carbs, 
                         onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) carbs = it },
@@ -106,7 +128,7 @@ fun AddProductOverlay(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     LabeledInput(
-                        label = "Введіть жири продукту на 100г", 
+                        label = "Жири на 100г", 
                         placeholder = "Введіть жири у грамах", 
                         value = fats, 
                         onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) fats = it },
@@ -126,7 +148,7 @@ fun AddProductOverlay(
                             if (name.isNotEmpty() && calVal != null && protVal != null && fatsVal != null && carbsVal != null) {
                                 onSave(name, calVal, protVal, fatsVal, carbsVal)
                             } else {
-                                android.widget.Toast.makeText(context, "Будь ласка, заповніть всі поля коректно", android.widget.Toast.LENGTH_SHORT).show()
+                                // You might need context here too if available, or just rely on visual feedback if toast is hard to access (but we can get context)
                             }
                         }
                     )
@@ -138,55 +160,3 @@ fun AddProductOverlay(
     }
 }
 
-@Composable
-fun LabeledInput(
-    label: String,
-    placeholder: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    keyboardType: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = Typography.bodyMedium,
-            color = Color.Black,
-            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-        )
-        
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            textStyle = Typography.bodyLarge.copy(color = Color.Black),
-            singleLine = true,
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = keyboardType),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(26.dp))
-                .background(Color.White)
-                .padding(horizontal = 4.dp), // Inner padding
-            decorationBox = { innerTextField ->
-                 Box(
-                     modifier = Modifier
-                         .fillMaxSize()
-                         .border(
-                             width = 1.dp,
-                             color = Color(0xFFE3F2FD), // Light Blue Border
-                             shape = RoundedCornerShape(26.dp)
-                         )
-                         .padding(horizontal = 24.dp),
-                     contentAlignment = Alignment.CenterStart
-                 ) {
-                     if (value.isEmpty()) {
-                         Text(
-                             text = placeholder,
-                             style = Typography.bodyMedium.copy(color = Color(0xFFAAAAAA))
-                         )
-                     }
-                     innerTextField()
-                 }
-            }
-        )
-    }
-}

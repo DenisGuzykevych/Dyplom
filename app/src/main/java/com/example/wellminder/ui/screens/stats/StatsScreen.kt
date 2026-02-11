@@ -35,16 +35,28 @@ import androidx.compose.runtime.*
 
 @Composable
 fun StatsScreen(
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    viewModel: StatsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     var showWeightDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(key1 = true) {
+        viewModel.uiEvent.collect { event ->
+            when(event) {
+                is StatsViewModel.UiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+            }
+        }
+    }
 
     if (showWeightDialog) {
         UpdateWeightDialog(
             onDismiss = { showWeightDialog = false },
             onSave = { newWeight ->
-                // TODO: Save weight logic
+                viewModel.saveWeight(newWeight.toFloatOrNull() ?: 0f)
                 showWeightDialog = false
             }
         )
@@ -52,6 +64,7 @@ fun StatsScreen(
 
     Scaffold(
         containerColor = Color(0xFFEFF5FF),
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
             BottomNavigationBar(
                 currentRoute = "stats",
@@ -92,14 +105,16 @@ fun StatsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Змінилась вага?",
+                            text = "Ваша вага",
                             style = Typography.bodyLarge.copy(fontSize = 18.sp),
                             color = Color.Black
                         )
                         Text(
-                            text = "Вкажіть актуальну",
+                            text = if (viewModel.currentWeight > 0) "${viewModel.currentWeight} кг" else "Вкажіть вагу",
                             style = Typography.bodyMedium,
-                            color = Color.Black
+                            color = Color.Black,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
                         )
                     }
 
@@ -142,7 +157,7 @@ fun StatsScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Bar Chart Placeholder
+                    // Bar Chart
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -150,16 +165,10 @@ fun StatsScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        val weeksData = listOf(
-                            "22.01" to 67.8f,
-                            "23.01" to 68.5f,
-                            "24.01" to 67.5f,
-                            "25.01" to 67.5f,
-                            "26.01" to 68.0f,
-                            "27.01" to 68.5f,
-                            "28.01" to 68.0f
-                        )
-                        val maxWeight = 70f
+                        val weeksData = viewModel.weeklyWeightData
+                        // Find max for scaling
+                        val maxWeight = weeksData.map { it.second }.maxOrNull()?.takeIf { it > 0f } ?: 100f
+                        val scaleMax = maxWeight * 1.1f
                         
                         weeksData.forEach { (date, weight) ->
                             Column(
@@ -167,7 +176,7 @@ fun StatsScreen(
                                 verticalArrangement = Arrangement.Bottom
                             ) {
                                 Text(
-                                    text = weight.toString(),
+                                    text = if (weight > 0) weight.toString() else "0",
                                     style = Typography.labelSmall,
                                     fontSize = 10.sp
                                 )
@@ -175,7 +184,9 @@ fun StatsScreen(
                                 Box(
                                     modifier = Modifier
                                         .width(12.dp)
-                                        .height((weight / maxWeight * 150).dp) // simplistic scaling
+                                        .height(
+                                            if (weight > 0) (weight / scaleMax * 150).dp else (150 / 4).dp
+                                        ) 
                                         .background(Color(0xFFFF8A00), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -206,7 +217,7 @@ fun StatsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Статистика за\n28.01.26",
+                        text = "Статистика за сьогодні",
                         style = Typography.titleMedium.copy(fontSize = 20.sp),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
@@ -214,7 +225,7 @@ fun StatsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Вага: 68кг",
+                        text = "Вага: ${if (viewModel.currentWeight > 0) "${viewModel.currentWeight}кг" else "--"}",
                         style = Typography.bodyLarge,
                         fontSize = 20.sp
                     )
@@ -223,29 +234,40 @@ fun StatsScreen(
                     
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                         StatCircle(
-                             label = "Вода",
-                             value = "1.5л", // Mock
-                             subValue = "з 2л",
-                             progress = 0.75f,
-                             color = Color(0xFF00C2FF) // Blue
-                         )
-                         StatCircle(
-                             label = "Калорії",
-                             value = "1400", // Mock
-                             subValue = "з 2500",
-                             progress = 0.56f,
-                             color = Color(0xFF4CAF50) // Green
-                         )
-                         StatCircle(
-                             label = "Кроки",
-                             value = "4.7k", // Mock
-                             subValue = "з 8k",
-                             progress = 0.6f,
-                             color = Color(0xFFFF002E) // Red
-                         )
+                         // Water
+                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                             StatCircle(
+                                 label = "Вода",
+                                 value = "${viewModel.waterIntake / 1000f}л",
+                                 subValue = "з ${viewModel.waterTarget / 1000}л",
+                                 progress = if (viewModel.waterTarget > 0) viewModel.waterIntake.toFloat() / viewModel.waterTarget.toFloat() else 0f,
+                                 color = Color(0xFF00C2FF) // Blue
+                             )
+                         }
+                         
+                         // Calories
+                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                             StatCircle(
+                                 label = "Калорії",
+                                 value = "${viewModel.consumedCalories}",
+                                 subValue = "з ${viewModel.calorieTarget}",
+                                 progress = if (viewModel.calorieTarget > 0) viewModel.consumedCalories.toFloat() / viewModel.calorieTarget.toFloat() else 0f,
+                                 color = Color(0xFF4CAF50) // Green
+                             )
+                         }
+                         
+                         // Steps
+                         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                             StatCircle(
+                                 label = "Кроки",
+                                 value = "${viewModel.stepCount}",
+                                 subValue = "з ${viewModel.stepTarget}",
+                                 progress = if (viewModel.stepTarget > 0) viewModel.stepCount.toFloat() / viewModel.stepTarget.toFloat() else 0f,
+                                 color = Color(0xFFFF002E) // Red
+                             )
+                         }
                     }
                      Spacer(modifier = Modifier.height(16.dp))
                 }
@@ -269,7 +291,7 @@ fun StatCircle(
         modifier = Modifier
             .background(Color(0xFFEFF5FF), RoundedCornerShape(24.dp)) // Light blue bg for item
             .padding(12.dp)
-            .width(90.dp) // Fixed width for uniformity
+            .fillMaxWidth() // Adapt to available space in weighted box
     ) {
         Text(text = label, style = Typography.bodyMedium, fontSize = 14.sp)
         
@@ -301,7 +323,7 @@ fun StatsCircularProgress(
     Canvas(modifier = Modifier.size(size)) {
         // Background track
         drawArc(
-            color = Color.White, // White track inside the light blue card
+            color = Color.White,
             startAngle = 0f,
             sweepAngle = 360f,
             useCenter = false,
@@ -314,20 +336,6 @@ fun StatsCircularProgress(
             sweepAngle = 360 * progress,
             useCenter = false,
             style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
-        )
-        
-        // Dot at end of progress (calculating position)
-        val angleInDegrees = -90f + (360 * progress)
-        val angleInRadians = Math.toRadians(angleInDegrees.toDouble())
-        val radius = (size.toPx() - strokeWidth.toPx()) / 2
-        val center = size.toPx() / 2
-        val cx = center + radius * Math.cos(angleInRadians).toFloat()
-        val cy = center + radius * Math.sin(angleInRadians).toFloat()
-        
-        drawCircle(
-            color = Color.White,
-            radius = strokeWidth.toPx() / 2, // Small dot inside? No, probably the knob.
-            center = Offset(cx, cy)
         )
     }
 }

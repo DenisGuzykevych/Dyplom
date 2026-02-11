@@ -31,6 +31,9 @@ interface UserDao {
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?
 
+    @Query("SELECT userId FROM users")
+    suspend fun getAllUserIds(): List<Long>
+
     @Query("SELECT * FROM users WHERE userId = :id LIMIT 1")
     suspend fun getUserById(id: Long): UserEntity?
 
@@ -42,6 +45,9 @@ interface UserDao {
 
     @Query("SELECT * FROM user_goals WHERE userId = :userId LIMIT 1")
     suspend fun getUserGoals(userId: Long): UserGoalEntity?
+
+    @Query("SELECT * FROM user_profiles WHERE userId = :userId LIMIT 1")
+    fun getUserProfileFlow(userId: Long): kotlinx.coroutines.flow.Flow<UserProfileEntity?>
 
     @Query("DELETE FROM users WHERE userId = :id")
     suspend fun deleteUserById(id: Long)
@@ -63,4 +69,7 @@ interface UserDao {
         )
         return userId
     }
+
+    @Query("SELECT * FROM weight_logs WHERE userId = :userId AND date >= :startDate ORDER BY date ASC")
+    suspend fun getWeightLogs(userId: Long, startDate: Long): List<WeightLogEntity>
 }

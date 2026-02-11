@@ -62,18 +62,19 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    // Determine fetchUserProfile signature change or overload
+     // Determine fetchUserProfile signature change or overload
     fun fetchUserProfile(userId: Long = preferenceManager.userId) {
         viewModelScope.launch {
-            // userId is passed as arg
             if (userId != -1L) {
-                userProfile = appDatabase.userDao().getUserProfile(userId)
-                userGoals = appDatabase.userDao().getUserGoals(userId)
-                
-                if (userProfile != null) {
-                    val user = appDatabase.userDao().getUserById(userProfile!!.userId)
-                    userEmail = user?.email
-                }
+                 appDatabase.userDao().getUserProfileFlow(userId).collect { profile ->
+                     userProfile = profile
+                     userGoals = appDatabase.userDao().getUserGoals(userId)
+                     
+                     if (profile != null) {
+                         val user = appDatabase.userDao().getUserById(profile.userId)
+                         userEmail = user?.email
+                     }
+                 }
             } else {
                 userProfile = null
                 userGoals = null
