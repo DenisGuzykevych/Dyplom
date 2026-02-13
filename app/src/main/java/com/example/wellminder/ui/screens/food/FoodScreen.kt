@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,8 +43,9 @@ fun FoodScreen(
     onNavigate: (String) -> Unit,
     viewModel: FoodViewModel = hiltViewModel()
 ) {
-    val foodList by viewModel.foodList.collectAsState(initial = emptyList())
+    val foodList by viewModel.filteredFoodList.collectAsState()
     val consumedFoodList by viewModel.consumedFoodList.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     
     // State for dialogs
     var showAddProductOverlay by remember { mutableStateOf(false) }
@@ -105,20 +107,28 @@ fun FoodScreen(
                             color = Color.Gray
                         )
                         
-                        // "Add Popular" Button (Small & Clean)
-                         Text(
-                            text = "+200 популярних",
-                            style = Typography.labelMedium,
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Bold,
+                        // "Add Custom Product" Button in Header
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .clickable { 
-                                     viewModel.populateFoodDb { msg ->
-                                         android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
-                                     } 
-                                }
-                                .padding(4.dp)
-                        )
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { showAddProductOverlay = true }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = Color(0xFF4CAF50),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Створити",
+                                style = Typography.labelMedium,
+                                color = Color(0xFF4CAF50),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                     
                     HorizontalDivider(color = Color(0xFFF0F0F0))
@@ -169,28 +179,32 @@ fun FoodScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. MIDDLE SECTION: Create Custom Food Banner
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Не знайшли продукт? Створіть власний!",
-                    textAlign = TextAlign.Center,
-                    style = Typography.bodyMedium,
-                    color = Color.Black
+            // 2. MIDDLE SECTION: Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.onSearchQueryChange(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .shadow(2.dp, RoundedCornerShape(24.dp)),
+                placeholder = { Text("Пошук продукту...", color = Color.Gray, fontSize = 14.sp) },
+                leadingIcon = { 
+                    Icon(
+                        Icons.Default.Search, 
+                        contentDescription = "Search", 
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    ) 
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = Color(0xFFFF8A00),
+                    unfocusedBorderColor = Color.Transparent,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { showAddProductOverlay = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .height(40.dp)
-                ) {
-                    Text("Створити свій", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

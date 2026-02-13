@@ -23,7 +23,8 @@ import javax.inject.Inject
 class ProfileViewModel @Inject constructor(
     private val healthConnectManager: HealthConnectManager,
     private val preferenceManager: PreferenceManager,
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val foodRepository: com.example.wellminder.data.repository.FoodRepository
 ) : ViewModel() {
 
     var steps by mutableIntStateOf(0)
@@ -193,7 +194,8 @@ class ProfileViewModel @Inject constructor(
             val bmr = com.example.wellminder.util.GoalCalculator.calculateBMR(weight, height, age, isMale)
             val tdee = com.example.wellminder.util.GoalCalculator.calculateTDEE(bmr)
             
-            val targetCalories = com.example.wellminder.util.GoalCalculator.calculateTargetCalories(tdee, goal)
+            val (targetProteins, targetFats, targetCarbs) = com.example.wellminder.util.GoalCalculator.calculateMacros(weight, goal)
+            val targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(targetProteins, targetFats, targetCarbs)
             val targetWater = com.example.wellminder.util.GoalCalculator.calculateWaterTarget(weight)
             val targetSteps = com.example.wellminder.util.GoalCalculator.calculateStepTarget(goal)
 
@@ -201,6 +203,9 @@ class ProfileViewModel @Inject constructor(
                 goalType = goal,
                 targetWeight = if (goal == "LOSE") weight - 5 else if (goal == "GAIN") weight + 5 else weight, 
                 targetCalories = targetCalories,
+                targetProteins = targetProteins,
+                targetFats = targetFats,
+                targetCarbs = targetCarbs,
                 targetWaterMl = targetWater,
                 targetSteps = targetSteps
             )
@@ -229,6 +234,4 @@ class ProfileViewModel @Inject constructor(
             _navigationEvent.send("login")
         }
     }
-
-
 }

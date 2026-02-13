@@ -26,14 +26,14 @@ object GoalCalculator {
             "GAIN" -> tdee + 500
             else -> tdee
         }
-        // Round to nearest 50
-        return (adjusted / 50).roundToInt() * 50
+        // Round to nearest 100
+        return (adjusted / 100).roundToInt() * 100
     }
 
     fun calculateWaterTarget(weightKg: Float): Int {
         val raw = weightKg * 35 // 35ml per kg
-        // Round to nearest 50
-        return (raw / 50).roundToInt() * 50
+        // Round to nearest 100
+        return (raw / 100).roundToInt() * 100
     }
 
     fun calculateStepTarget(goalType: String): Int {
@@ -42,31 +42,29 @@ object GoalCalculator {
             "GAIN" -> 8000
             else -> 8000
         }
-        // Round to nearest 1000 (already clean, but good for safety)
+        // Round to nearest 1000
         return (raw / 1000) * 1000
     }
 
-    // Returns Triple(Proteins, Fats, Carbs) in grams
-    fun calculateMacros(targetCalories: Int, goalType: String): Triple<Float, Float, Float> {
-        // Ratios based on Goal
-        val (pRatio, fRatio, cRatio) = when (goalType.uppercase()) {
-            "LOSE" -> Triple(0.40f, 0.30f, 0.30f) // High protein for retention
-            "GAIN" -> Triple(0.30f, 0.20f, 0.50f) // High carb for fuel
-            else -> Triple(0.30f, 0.30f, 0.40f) // Balanced (MAINTAIN)
+    // Returns Triple(Proteins, Fats, Carbs) in grams based on Weight
+    fun calculateMacros(weightKg: Float, goalType: String): Triple<Float, Float, Float> {
+        // Coefficients (g per kg of weight)
+        val (pCoeff, fCoeff, cCoeff) = when (goalType.uppercase()) {
+            "LOSE" -> Triple(2.0f, 0.8f, 2.0f)     // Higher protein, lower carbs/fats
+            "GAIN" -> Triple(1.8f, 1.2f, 5.0f)     // Moderate protein, higher calories/carbs
+            else -> Triple(1.5f, 1.0f, 3.0f)       // Standard (MAINTAIN)
         }
 
-        val pCals = targetCalories * pRatio
-        val fCals = targetCalories * fRatio
-        val cCals = targetCalories * cRatio
-
-        // 1g Protein = 4kcal
-        // 1g Fat = 9kcal
-        // 1g Carb = 4kcal
-        
-        val pGrams = (pCals / 4f).roundToInt().toFloat()
-        val fGrams = (fCals / 9f).roundToInt().toFloat()
-        val cGrams = (cCals / 4f).roundToInt().toFloat()
+        val pGrams = (weightKg * pCoeff).roundToInt().toFloat()
+        val fGrams = (weightKg * fCoeff).roundToInt().toFloat()
+        val cGrams = (weightKg * cCoeff).roundToInt().toFloat()
 
         return Triple(pGrams, fGrams, cGrams)
+    }
+
+    fun calculateCaloriesFromMacros(p: Float, f: Float, c: Float): Int {
+        val raw = p * 4 + f * 9 + c * 4
+        // Round to nearest 100
+        return (raw / 100).roundToInt() * 100
     }
 }

@@ -126,11 +126,9 @@ class HomeViewModel @Inject constructor(
                         targetCalories = goals.targetCalories
                         stepTarget = goals.targetSteps
                         waterTarget = goals.targetWaterMl
-    
-                        val (p, f, c) = com.example.wellminder.util.GoalCalculator.calculateMacros(targetCalories, goals.goalType)
-                        targetProteins = p
-                        targetFats = f
-                        targetCarbs = c
+                        targetProteins = goals.targetProteins
+                        targetFats = goals.targetFats
+                        targetCarbs = goals.targetCarbs
                     }
                 }
             }

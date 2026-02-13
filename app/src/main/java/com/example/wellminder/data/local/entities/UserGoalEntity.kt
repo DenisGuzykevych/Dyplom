@@ -23,5 +23,8 @@ data class UserGoalEntity(
     val targetWaterMl: Int,
     val targetSteps: Int,
     val targetCalories: Int,
+    val targetProteins: Float = 0f,
+    val targetFats: Float = 0f,
+    val targetCarbs: Float = 0f,
     val goalType: String = "MAINTAIN" // "LOSE", "MAINTAIN", "GAIN"
 )

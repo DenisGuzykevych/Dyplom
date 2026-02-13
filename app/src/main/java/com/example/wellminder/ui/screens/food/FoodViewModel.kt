@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
 import com.example.wellminder.data.local.dao.UserDao
@@ -95,6 +96,13 @@ class FoodViewModel @Inject constructor(
                         targetCalories = goals.targetCalories
                     }
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            val currentFood = repository.getAllFood().firstOrNull() ?: emptyList()
+            if (!preferenceManager.isFoodPopulated || currentFood.isEmpty()) {
+                populateFoodDb { /* silent initialization */ }
             }
         }
     }

@@ -66,8 +66,10 @@ class StatsViewModel @Inject constructor(
                                 stepTarget = goals.targetSteps
                                 calorieTarget = goals.targetCalories
                                 
-                                // Calculate Macros for consistency
-                                val (p, f, c) = com.example.wellminder.util.GoalCalculator.calculateMacros(calorieTarget, goals.goalType)
+                                // Macros are available in goals entity now
+                                val p = goals.targetProteins
+                                val f = goals.targetFats
+                                val c = goals.targetCarbs
                             }
                         }
                     }
