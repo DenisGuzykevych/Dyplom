@@ -74,8 +74,8 @@ fun HomeScreen(
     LaunchedEffect(viewModel.steps) {
         stepCount = viewModel.steps
     }
-    val waterTarget = 2000
-    val stepTarget = 8000
+    val waterTarget = viewModel.waterTarget
+    val stepTarget = viewModel.stepTarget
 
     
     Scaffold(
@@ -161,7 +161,7 @@ fun HomeScreen(
             
 
             
-            Spacer(modifier = Modifier.height(84.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
         }
         

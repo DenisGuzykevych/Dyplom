@@ -58,7 +58,7 @@ fun RegisterScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Create Account",
+            text = "Створити акаунт",
             style = Typography.headlineLarge.copy(
                 fontWeight = FontWeight.Bold,
                 color = OrangePrimary, // Updated to Orange
@@ -69,7 +69,7 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Sign up to get started!",
+            text = "Зареєструйтесь, щоб почати!",
             style = Typography.bodyLarge.copy(color = Color.Gray)
         )
 
@@ -78,7 +78,7 @@ fun RegisterScreen(
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("Name") },
+            label = { Text("Ім'я") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -93,7 +93,7 @@ fun RegisterScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text("Електронна пошта") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -109,7 +109,7 @@ fun RegisterScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text("Пароль") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -138,14 +138,17 @@ fun RegisterScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary), // Updated to Orange
+            colors = ButtonDefaults.buttonColors(
+                containerColor = OrangePrimary,
+                contentColor = Color.White // Force white text
+            ),
             enabled = authState != AuthState.Loading
         ) {
             if (authState == AuthState.Loading) {
                  CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text(
-                    text = "Sign Up",
+                    text = "Зареєструватися",
                     style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
@@ -156,9 +159,9 @@ fun RegisterScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Already have an account? ", color = Color.Gray)
+            Text(text = "Вже є акаунт? ", color = Color.Gray)
             Text(
-                text = "Log In",
+                text = "Увійти",
                 color = OrangePrimary, // Updated to Orange
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onNavigateToLogin() }

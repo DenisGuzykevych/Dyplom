@@ -49,6 +49,9 @@ interface UserDao {
     @Query("SELECT * FROM user_profiles WHERE userId = :userId LIMIT 1")
     fun getUserProfileFlow(userId: Long): kotlinx.coroutines.flow.Flow<UserProfileEntity?>
 
+    @Query("SELECT * FROM user_goals WHERE userId = :userId LIMIT 1")
+    fun getUserGoalsFlow(userId: Long): kotlinx.coroutines.flow.Flow<UserGoalEntity?>
+
     @Query("DELETE FROM users WHERE userId = :id")
     suspend fun deleteUserById(id: Long)
 
@@ -72,4 +75,7 @@ interface UserDao {
 
     @Query("SELECT * FROM weight_logs WHERE userId = :userId AND date >= :startDate ORDER BY date ASC")
     suspend fun getWeightLogs(userId: Long, startDate: Long): List<WeightLogEntity>
+
+    @Query("SELECT * FROM weight_logs WHERE userId = :userId AND date < :date ORDER BY date DESC LIMIT 1")
+    suspend fun getLastWeightLogBefore(userId: Long, date: Long): WeightLogEntity?
 }

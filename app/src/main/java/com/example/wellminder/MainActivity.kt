@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
         val startDest = if (preferenceManager.isLoggedIn) "home" else "login"
         
         scheduleDailySummaryWorker()
+        schedulePopulateDatabaseWorker()
 
         setContent {
             WellMinderTheme {
@@ -56,6 +57,18 @@ class MainActivity : ComponentActivity() {
             "DailySummaryWorker",
             androidx.work.ExistingPeriodicWorkPolicy.KEEP,
             dailyWorkRequest
+        )
+    }
+
+    private fun schedulePopulateDatabaseWorker() {
+        val workManager = androidx.work.WorkManager.getInstance(applicationContext)
+        val request = androidx.work.OneTimeWorkRequest.Builder(com.example.wellminder.workers.PopulateDatabaseWorker::class.java)
+            .build()
+        
+        workManager.enqueueUniqueWork(
+            "PopulateDatabaseWorker_v3",
+            androidx.work.ExistingWorkPolicy.KEEP,
+            request
         )
     }
 }

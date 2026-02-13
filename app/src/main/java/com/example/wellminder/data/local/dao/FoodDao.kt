@@ -42,5 +42,11 @@ interface FoodDao {
         updateFood(food)
         updateNutrients(nutrients)
     }
+
+    @Query("SELECT * FROM food_categories WHERE name = :name LIMIT 1")
+    suspend fun getCategoryByName(name: String): FoodCategoryEntity?
+
+    @Query("SELECT * FROM food WHERE name = :name LIMIT 1")
+    suspend fun getFoodByName(name: String): FoodEntity?
 }
 

@@ -17,7 +17,12 @@ class PreferenceManager(context: Context) {
         private const val KEY_WEIGHT = "weight"
         private const val KEY_HEIGHT = "height"
         private const val KEY_AGE = "age"
+        private const val KEY_IS_FOOD_POPULATED = "is_food_populated"
     }
+
+    var isFoodPopulated: Boolean
+        get() = sharedPreferences.getBoolean(KEY_IS_FOOD_POPULATED, false)
+        set(value) = sharedPreferences.edit().putBoolean(KEY_IS_FOOD_POPULATED, value).apply()
 
     private val _userIdFlow = kotlinx.coroutines.flow.MutableStateFlow(userId)
     val userIdFlow: kotlinx.coroutines.flow.StateFlow<Long> = _userIdFlow
@@ -56,6 +61,10 @@ class PreferenceManager(context: Context) {
     var age: Int
         get() = sharedPreferences.getInt(KEY_AGE, 0)
         set(value) = sharedPreferences.edit().putInt(KEY_AGE, value).apply()
+
+    var userGoal: String?
+        get() = sharedPreferences.getString("user_goal", "MAINTAIN")
+        set(value) = sharedPreferences.edit().putString("user_goal", value).apply()
 
     fun clear() {
         sharedPreferences.edit().clear().apply()

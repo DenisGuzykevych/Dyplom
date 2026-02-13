@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -216,16 +217,39 @@ fun StatsScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "Статистика за сьогодні",
-                        style = Typography.titleMedium.copy(fontSize = 20.sp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
+                    // Date Selector
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        IconButton(onClick = { viewModel.changeDate(-1) }) {
+                            Icon(androidx.compose.material.icons.Icons.Default.ChevronLeft, contentDescription = "Previous Day", tint = Color.Gray)
+                        }
+                        
+                        Text(
+                            text = if (viewModel.selectedDate == java.time.LocalDate.now()) "Сьогодні" else viewModel.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")),
+                            style = Typography.titleMedium.copy(fontSize = 18.sp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        IconButton(
+                            onClick = { viewModel.changeDate(1) },
+                            enabled = viewModel.selectedDate < java.time.LocalDate.now()
+                        ) {
+                            Icon(
+                                androidx.compose.material.icons.Icons.Default.ChevronRight, 
+                                contentDescription = "Next Day", 
+                                tint = if (viewModel.selectedDate < java.time.LocalDate.now()) Color.Gray else Color.LightGray
+                            )
+                        }
+                    }
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = "Вага: ${if (viewModel.currentWeight > 0) "${viewModel.currentWeight}кг" else "--"}",
+                        text = "Вага: ${if (viewModel.currentWeight > 0f) "${viewModel.currentWeight}кг" else "-"}",
                         style = Typography.bodyLarge,
                         fontSize = 20.sp
                     )
@@ -273,7 +297,7 @@ fun StatsScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

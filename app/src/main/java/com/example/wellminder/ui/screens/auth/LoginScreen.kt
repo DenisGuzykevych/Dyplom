@@ -63,7 +63,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Welcome back!",
+            text = "З поверненням!",
             style = Typography.bodyLarge.copy(color = Color.Gray)
         )
 
@@ -72,7 +72,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text("Електронна пошта") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -88,7 +88,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text("Пароль") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -117,14 +117,17 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = OrangePrimary), // Updated to Orange
+            colors = ButtonDefaults.buttonColors(
+                containerColor = OrangePrimary,
+                contentColor = Color.White // Force white text
+            ),
             enabled = authState != AuthState.Loading
         ) {
             if (authState == AuthState.Loading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text(
-                    text = "Log In",
+                    text = "Увійти",
                     style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
@@ -135,7 +138,7 @@ fun LoginScreen(
         // Skip Button
         TextButton(onClick = { viewModel.continueGuest() }) {
             Text(
-                text = "Skip for now (Guest Mode)",
+                text = "Пропустити (Гостьовий режим)",
                 color = Color.Gray
             )
         }
@@ -145,9 +148,9 @@ fun LoginScreen(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Don't have an account? ", color = Color.Gray)
+            Text(text = "Немає акаунту? ", color = Color.Gray)
             Text(
-                text = "Sign Up",
+                text = "Зареєструватися",
                 color = OrangePrimary, // Updated to Orange
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.clickable { onNavigateToRegister() }

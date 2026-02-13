@@ -28,26 +28,29 @@ fun TopBarSection() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo Placeholder
-        Box(
-            modifier = Modifier
-                .size(50.dp)
-                .background(Color.White, CircleShape)
-                .shadow(4.dp, CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Bolt, 
-                contentDescription = "Logo",
-                tint = Color(0xFFFF5722),
-                modifier = Modifier.size(32.dp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // App Logo
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.example.wellminder.R.drawable.logo),
+                contentDescription = "App Logo",
+                modifier = Modifier.size(60.dp)
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Text(
+                text = "WellMinder",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp,
+                    fontSize = 22.sp
+                ),
+                color = Color.Black
             )
         }
         
         // Profile or Camera cutout area
         // Assuming just a simple profile icon for now
-
-
     }
 }
 

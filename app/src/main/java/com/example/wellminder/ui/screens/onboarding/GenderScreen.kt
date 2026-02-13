@@ -35,7 +35,7 @@ fun GenderScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Tell us about yourself",
+            text = "Розкажіть про себе",
             style = Typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = OrangePrimary
@@ -45,7 +45,7 @@ fun GenderScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "To give you better experience we need to know your gender",
+            text = "Для кращого досвіду нам потрібно знати вашу стать",
             style = Typography.bodyLarge.copy(color = Color.Gray),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
@@ -57,12 +57,12 @@ fun GenderScreen(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             GenderCard(
-                text = "Male",
+                text = "Чоловік",
                 isSelected = selectedGender == "Male",
                 onClick = { selectedGender = "Male" }
             )
             GenderCard(
-                text = "Female",
+                text = "Жінка",
                 isSelected = selectedGender == "Female",
                 onClick = { selectedGender = "Female" }
             )
@@ -84,11 +84,12 @@ fun GenderScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = OrangePrimary,
+                contentColor = Color.White,
                 disabledContainerColor = Color.LightGray
             )
         ) {
             Text(
-                text = "Next",
+                text = "Далі",
                 style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
         }

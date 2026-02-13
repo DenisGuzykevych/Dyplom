@@ -46,7 +46,7 @@ fun UserInfoScreen(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Tell us more",
+            text = "Розкажіть більше",
             style = Typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = OrangePrimary
@@ -56,7 +56,7 @@ fun UserInfoScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Height and weight help us calculate accurate calories and steps",
+            text = "Зріст та вага допомагають нам точніше розрахувати калорії та кроки",
             style = Typography.bodyLarge.copy(color = Color.Gray),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
@@ -66,7 +66,7 @@ fun UserInfoScreen(
         OutlinedTextField(
             value = age,
             onValueChange = { if (it.all { char -> char.isDigit() }) age = it },
-            label = { Text("Age") },
+            label = { Text("Вік") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -82,7 +82,7 @@ fun UserInfoScreen(
         OutlinedTextField(
             value = weight,
             onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) weight = it },
-            label = { Text("Weight (kg)") },
+            label = { Text("Вага (кг)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -98,7 +98,7 @@ fun UserInfoScreen(
         OutlinedTextField(
             value = height,
             onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) height = it },
-            label = { Text("Height (cm)") },
+            label = { Text("Зріст (см)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -137,6 +137,7 @@ fun UserInfoScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = OrangePrimary,
+                contentColor = Color.White,
                 disabledContainerColor = Color.LightGray
             )
         ) {
@@ -144,7 +145,7 @@ fun UserInfoScreen(
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text(
-                    text = "Finish",
+                    text = "Завершити",
                     style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }

@@ -95,6 +95,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+
+    
+    // Expose these for UI
+    var stepTarget by mutableIntStateOf(10000)
+        private set
+    var waterTarget by mutableIntStateOf(2000)
+        private set
+
+    // Update loadWaterAndStats to set these
     private fun loadWaterAndStats(id: Long) {
         viewModelScope.launch {
             if (id != -1L) {
@@ -111,20 +120,18 @@ class HomeViewModel @Inject constructor(
                 val stride = (height * 0.415) / 100.0
                 stepsPerKm = (1000 / stride).toInt()
                 
-                // Load Goals
-                val goals = userDao.getUserGoals(id)
-                if (goals != null) {
-                    targetCalories = goals.targetCalories
-                    // Simple macro split estimation if not stored (e.g. 20/30/50 split for now or similar)
-                    // P: 1g = 4kcal, F: 1g = 9kcal, C: 1g = 4kcal
-                    // Let's assume a standard split if not explicitly in goals (Goals entity only accepts targetCalories atm in snippet 87? 
-                    // No, wait, snippet 87 shows targetWeight, targetWaterMl, targetSteps, targetCalories. No specific macros.
-                    // So we estimate targets based on calories.
-                    
-                    // Example: Protein 20%, Fats 30%, Carbs 50%
-                    targetProteins = (targetCalories * 0.2f) / 4f
-                    targetFats = (targetCalories * 0.3f) / 9f
-                    targetCarbs = (targetCalories * 0.5f) / 4f
+                // Load Goals (Observe for changes)
+                userDao.getUserGoalsFlow(id).collect { goals ->
+                    if (goals != null) {
+                        targetCalories = goals.targetCalories
+                        stepTarget = goals.targetSteps
+                        waterTarget = goals.targetWaterMl
+    
+                        val (p, f, c) = com.example.wellminder.util.GoalCalculator.calculateMacros(targetCalories, goals.goalType)
+                        targetProteins = p
+                        targetFats = f
+                        targetCarbs = c
+                    }
                 }
             }
         }

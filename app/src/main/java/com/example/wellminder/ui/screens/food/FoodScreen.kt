@@ -32,6 +32,7 @@ import com.example.wellminder.ui.components.MealType
 import com.example.wellminder.ui.components.ReusableFoodSection
 import com.example.wellminder.ui.components.TopBarSection
 import com.example.wellminder.ui.theme.Typography
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.HorizontalDivider
@@ -49,6 +50,9 @@ fun FoodScreen(
     var itemToEdit by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var itemToDelete by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var editProductItem by remember { mutableStateOf<FoodWithNutrientsAndCategory?>(null) }
+    var itemToAdd by remember { mutableStateOf<FoodWithNutrientsAndCategory?>(null) }
+    
+    val context = LocalContext.current
     
     // Meal Selection State
     var selectedMeal by remember { mutableStateOf(MealType.BREAKFAST) }
@@ -75,6 +79,7 @@ fun FoodScreen(
 
             // 1. TOP SECTION: Available Food Library
             // Fixed height or weight to ensure it doesn't take up too much space
+            // 1. TOP SECTION: Available Food Library
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -82,46 +87,82 @@ fun FoodScreen(
                 border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.35f) // Takes up about 35% of the vertical space
+                    .weight(0.35f) 
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp)
-                ) {
-                    items(foodList) { item ->
-                        Row(
+                Column {
+                    // Header for List
+                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "База продуктів",
+                            style = Typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray
+                        )
+                        
+                        // "Add Popular" Button (Small & Clean)
+                         Text(
+                            text = "+200 популярних",
+                            style = Typography.labelMedium,
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clickable { editProductItem = item }, // Edit available food
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(item.food.name, style = Typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                Text("${item.nutrients?.calories} ккал", style = Typography.bodySmall, color = Color.Gray)
-                            }
-                            
-                            // Edit Icon
-                             Icon(
-                                Icons.Default.Edit, 
-                                contentDescription = "Edit", 
-                                tint = Color(0xFFFF8A00),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            
-                            Spacer(modifier = Modifier.width(16.dp))
+                                .clickable { 
+                                     viewModel.populateFoodDb { msg ->
+                                         android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                     } 
+                                }
+                                .padding(4.dp)
+                        )
+                    }
+                    
+                    HorizontalDivider(color = Color(0xFFF0F0F0))
 
-                            // Delete Icon (Optional, keeping it consistent with request if needed, or just Edit)
-                             Icon(
-                                Icons.Default.Delete, 
-                                contentDescription = "Delete", 
-                                tint = Color(0xFFD32F2F),
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)
+                    ) {
+                        items(foodList) { item ->
+                            // ... item content ... (keeping same)
+                            Row(
                                 modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable { viewModel.deleteFood(item) }
-                            )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                                    .clickable { itemToAdd = item }, 
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.food.name, style = Typography.bodyMedium, fontWeight = FontWeight.Bold)
+                                    Text("${item.nutrients?.calories} ккал", style = Typography.bodySmall, color = Color.Gray)
+                                }
+                                
+                                 Icon(
+                                    Icons.Default.Edit, 
+                                    contentDescription = "Edit", 
+                                    tint = Color(0xFFFF8A00),
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clickable { editProductItem = item }
+                                )
+                                
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                 Icon(
+                                    Icons.Default.Delete, 
+                                    contentDescription = "Delete", 
+                                    tint = Color(0xFFD32F2F),
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clickable { viewModel.deleteFood(item) }
+                                )
+                            }
+                            HorizontalDivider(color = Color(0xFFF0F0F0))
                         }
-                        HorizontalDivider(color = Color(0xFFF0F0F0))
                     }
                 }
             }
@@ -134,25 +175,24 @@ fun FoodScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Страви чи продукту немає у додатку?\nСтворіть свій їх самі!",
+                    text = "Не знайшли продукт? Створіть власний!",
                     textAlign = TextAlign.Center,
                     style = Typography.bodyMedium,
                     color = Color.Black
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { showAddProductOverlay = true },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
                     shape = RoundedCornerShape(24.dp),
                     modifier = Modifier
-                        .height(48.dp)
-                        .fillMaxWidth(0.6f)
+                        .height(40.dp)
                 ) {
-                    Text("Додати!", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Створити свій", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // 3. BOTTOM SECTION: Meal Tabs & Consumed List
             Card(
@@ -160,50 +200,58 @@ fun FoodScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(0.65f) // Takes remaining space
+                    .weight(0.65f) 
                     .shadow(4.dp, RoundedCornerShape(32.dp))
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // Custom Tab Row
+                    // Custom Tab Row Refined
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, start = 8.dp, end = 8.dp, bottom = 8.dp),
+                            .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        MealType.entries.forEach { meal ->
+                        MealType.entries.forEachIndexed { index, meal ->
                             val isSelected = selectedMeal == meal
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                            
+                            Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .clickable { selectedMeal = meal }
+                                    .height(50.dp) // Fixed height for uniformity
+                                    .clip(RoundedCornerShape(16.dp))
                                     .background(if (isSelected) Color(0xFFFF8A00) else Color.Transparent)
-                                    .padding(vertical = 8.dp)
+                                    .clickable { selectedMeal = meal },
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = meal.title,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else Color.Black
-                                )
-                                Text(
-                                    text = meal.timeRange,
-                                    fontSize = 10.sp,
-                                    color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color.Gray
-                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = meal.title,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color.White else Color.Black
+                                    )
+                                    Text(
+                                        text = meal.timeRange,
+                                        fontSize = 9.sp,
+                                        color = if (isSelected) Color.White.copy(alpha = 0.8f) else Color.Gray
+                                    )
+                                }
                             }
-                            if (meal != MealType.SNACK) {
+                            
+                            // Vertical Divider Logic
+                            if (index < MealType.entries.size - 1) {
                                 VerticalDivider(
-                                    modifier = Modifier.height(30.dp).width(1.dp),
-                                    color = Color.LightGray
+                                    modifier = Modifier
+                                        .height(30.dp)
+                                        .width(1.dp)
+                                        .align(Alignment.CenterVertically), 
+                                    color = Color(0xFFEEEEEE)
                                 )
                             }
                         }
                     }
 
-                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                    HorizontalDivider(color = Color(0xFFF5F5F5))
 
                     // Consumed List for Selected Meal
                     val filteredLogs = consumedFoodList.filter { it.consumed.mealType == selectedMeal.title }
@@ -223,7 +271,7 @@ fun FoodScreen(
                         } else {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp)
+                                contentPadding = PaddingValues(top = 16.dp, start = 16.dp, end = 16.dp, bottom = 100.dp)
                             ) {
                                 items(filteredLogs) { item ->
                                     ConsumedFoodItem(
@@ -282,6 +330,8 @@ fun FoodScreen(
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
@@ -292,6 +342,18 @@ fun FoodScreen(
             onSave = { name, cals, prot, fats, carbs ->
                 viewModel.addFood(name, cals, prot, fats, carbs)
                 showAddProductOverlay = false
+            }
+        )
+    }
+
+    if (itemToAdd != null) {
+        AddToMealDialog(
+            item = itemToAdd!!,
+            mealType = selectedMeal.title,
+            onDismiss = { itemToAdd = null },
+            onAdd = { grams ->
+                viewModel.logConsumedFood(itemToAdd!!.food.foodId, grams, selectedMeal.title)
+                itemToAdd = null
             }
         )
     }

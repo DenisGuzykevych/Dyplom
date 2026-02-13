@@ -73,6 +73,14 @@ fun AppNavigation(
             com.example.wellminder.ui.screens.onboarding.GenderScreen(
                 onNavigateToUserInfo = { gender ->
                     preferenceManager.gender = gender
+                    navController.navigate("onboarding_goal")
+                }
+            )
+        }
+
+        composable("onboarding_goal") {
+            com.example.wellminder.ui.screens.onboarding.GoalScreen(
+                onNavigateToUserInfo = {
                     navController.navigate("onboarding_user_info")
                 }
             )

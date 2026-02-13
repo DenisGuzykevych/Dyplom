@@ -23,8 +23,11 @@ class OnboardingViewModel @Inject constructor(
     val onboardingState = _onboardingState.asStateFlow()
 
     fun setGender(gender: String) {
-        // Just save to prefs temporarily or local state
         preferenceManager.gender = gender
+    }
+
+    fun setGoal(goal: String) {
+        preferenceManager.userGoal = goal
     }
 
     fun completeOnboarding(age: Int, weight: Float, height: Float) {
@@ -64,6 +67,37 @@ class OnboardingViewModel @Inject constructor(
                             weightValue = weight
                         )
                     )
+
+                    // Calculate and Save Initial Goals
+                    val isMale = updatedProfile.gender.equals("Male", ignoreCase = true) || 
+                                 updatedProfile.gender.equals("Чоловік", ignoreCase = true) ||
+                                 updatedProfile.gender.equals("Чоловіча", ignoreCase = true)
+
+                    val bmr = com.example.wellminder.util.GoalCalculator.calculateBMR(weight, height.toInt(), age, isMale)
+                    val tdee = com.example.wellminder.util.GoalCalculator.calculateTDEE(bmr)
+                    
+                    val goal = preferenceManager.userGoal ?: "MAINTAIN"
+                    
+                    val targetCalories = com.example.wellminder.util.GoalCalculator.calculateTargetCalories(tdee, goal)
+                    val targetWater = com.example.wellminder.util.GoalCalculator.calculateWaterTarget(weight)
+                    val targetSteps = com.example.wellminder.util.GoalCalculator.calculateStepTarget(goal)
+
+                    val userGoal = com.example.wellminder.data.local.entities.UserGoalEntity(
+                        userId = updatedProfile.userId,
+                        targetWeight = weight,
+                        targetWaterMl = targetWater,
+                        targetSteps = targetSteps,
+                        targetCalories = targetCalories,
+                        goalType = goal
+                    )
+                    
+                    // Check if goals exist, if so update, else insert.
+                    val existingGoals = userDao.getUserGoals(updatedProfile.userId)
+                    if (existingGoals != null) {
+                         userDao.updateGoals(userGoal.copy(goalId = existingGoals.goalId))
+                    } else {
+                         userDao.insertGoals(userGoal)
+                    }
                 }
                 
                 preferenceManager.isOnboardingComplete = true

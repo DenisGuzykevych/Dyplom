@@ -22,8 +22,66 @@ import androidx.compose.runtime.setValue
 class FoodViewModel @Inject constructor(
     private val repository: FoodRepository,
     private val userDao: UserDao,
-    private val preferenceManager: PreferenceManager
+    private val preferenceManager: PreferenceManager,
+    private val appDatabase: com.example.wellminder.data.local.AppDatabase
 ) : ViewModel() {
+
+    fun populateFoodDb(onComplete: (String) -> Unit) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val foodDao = appDatabase.foodDao()
+                val categoriesMap = mutableMapOf<String, Long>()
+
+                com.example.wellminder.data.local.InitialFoodData.list.forEach { item ->
+                    // 1. Get or Insert Category
+                    val categoryName = item.category
+                    var categoryId = categoriesMap[categoryName]
+                    
+                    if (categoryId == null) {
+                        val existingCategory = foodDao.getCategoryByName(categoryName)
+                        if (existingCategory != null) {
+                            categoryId = existingCategory.categoryId
+                        } else {
+                            val newCategory = com.example.wellminder.data.local.entities.FoodCategoryEntity(name = categoryName)
+                            categoryId = foodDao.insertCategory(newCategory)
+                        }
+                        categoriesMap[categoryName] = categoryId!!
+                    }
+
+                    // 2. Check if Food exists
+                    val existingFood = foodDao.getFoodByName(item.name)
+                    if (existingFood == null) {
+                        // Insert Food
+                        val food = com.example.wellminder.data.local.entities.FoodEntity(
+                            name = item.name,
+                            categoryId = categoryId
+                        )
+                        val foodId = foodDao.insertFood(food)
+
+                        // 3. Insert Nutrients
+                        val nutrients = com.example.wellminder.data.local.entities.FoodNutrientEntity(
+                            foodId = foodId,
+                            calories = item.cals,
+                            proteins = item.prot,
+                            fats = item.fats,
+                            carbohydrates = item.carbs
+                        )
+                        foodDao.insertNutrients(nutrients)
+                    }
+                }
+                
+                preferenceManager.isFoodPopulated = true
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete("Додано нові продукти!")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onComplete("Помилка: ${e.message}")
+                }
+            }
+        }
+    }
 
     var targetCalories by mutableIntStateOf(2000)
         private set

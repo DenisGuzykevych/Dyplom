@@ -25,6 +25,9 @@ class StatsViewModel @Inject constructor(
     var currentWeight by mutableFloatStateOf(0f)
         private set
 
+    var selectedDate by mutableStateOf(java.time.LocalDate.now())
+        private set
+
     var waterIntake by mutableIntStateOf(0)
         private set
     var waterTarget by mutableIntStateOf(2000)
@@ -51,11 +54,47 @@ class StatsViewModel @Inject constructor(
         viewModelScope.launch {
             preferenceManager.userIdFlow.collect { userId ->
                 if (userId != -1L) {
-                    launch { loadWeight(userId) }
-                    launch { loadDailyStats(userId) }
+                    // Load graph relative to today (fixed window) or selected? 
+                    // Let's keep graph fixed to "Recent History" (Today).
                     launch { loadWeeklyWeight(userId) }
+                    
+                    // Observe Goals
+                    launch {
+                        userDao.getUserGoalsFlow(userId).collect { goals ->
+                            if (goals != null) {
+                                waterTarget = goals.targetWaterMl
+                                stepTarget = goals.targetSteps
+                                calorieTarget = goals.targetCalories
+                                
+                                // Calculate Macros for consistency
+                                val (p, f, c) = com.example.wellminder.util.GoalCalculator.calculateMacros(calorieTarget, goals.goalType)
+                            }
+                        }
+                    }
+                    // Load daily stats for the selected date
+                    launch { loadWeightForDate(userId, selectedDate) }
+                    launch { loadDailyStats(userId, selectedDate) }
                 }
             }
+        }
+    }
+
+    private var dailyStatsJob: kotlinx.coroutines.Job? = null
+
+    fun changeDate(offset: Long) {
+        selectedDate = selectedDate.plusDays(offset)
+        reloadDayData()
+    }
+
+    private fun reloadDayData() {
+        val userId = preferenceManager.userId
+        if (userId != -1L) {
+             viewModelScope.launch { loadWeightForDate(userId, selectedDate) }
+             
+             dailyStatsJob?.cancel()
+             dailyStatsJob = viewModelScope.launch {
+                 loadDailyStats(userId, selectedDate)
+             }
         }
     }
 
@@ -64,6 +103,11 @@ class StatsViewModel @Inject constructor(
         val sevenDaysAgo = today.minusDays(6)
         val startDate = sevenDaysAgo.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
 
+        // 1. Get initial weight (before the window)
+        val initialLog = userDao.getLastWeightLogBefore(userId, startDate)
+        var runningWeight = initialLog?.weightValue ?: 0f // Start with last known or 0
+
+        // 2. Get logs within the window
         val logs = userDao.getWeightLogs(userId, startDate)
         
         // Map logs to date string (dd.MM) -> weight
@@ -76,42 +120,50 @@ class StatsViewModel @Inject constructor(
         val resultList = mutableListOf<Pair<String, Float>>()
         val formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM")
 
-        // Fill last 7 days
+        // Fill last 7 days forward-filling missing values
         for (i in 0..6) {
             val date = sevenDaysAgo.plusDays(i.toLong())
             val dateStr = date.format(formatter)
-            // If no data, use 0 as requested
-            val weight = logMap[dateStr] ?: 0f
-            resultList.add(dateStr to weight)
+            
+            // If log exists for this day, update running weight
+            if (logMap.containsKey(dateStr)) {
+                runningWeight = logMap[dateStr] ?: runningWeight
+            }
+            
+            resultList.add(dateStr to runningWeight)
         }
         weeklyWeightData = resultList
     }
 
-    private suspend fun loadWeight(userId: Long) {
-        val profile = userDao.getUserProfile(userId)
-        currentWeight = profile?.currentWeight ?: 0f
+    private suspend fun loadWeightForDate(userId: Long, date: java.time.LocalDate) {
+        val endOfDay = date.plusDays(1).atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val log = userDao.getLastWeightLogBefore(userId, endOfDay)
+        currentWeight = log?.weightValue ?: 0f
     }
 
-    private suspend fun loadDailyStats(userId: Long) = coroutineScope {
-        val today = java.time.LocalDate.now()
+    private suspend fun loadDailyStats(userId: Long, date: java.time.LocalDate) = coroutineScope {
+        // Reset values to 0 while loading (optional, prevents stale data flicker)
+        waterIntake = 0
+        stepCount = 0
+        consumedCalories = 0
         
         // Water
         launch {
-            statsRepository.getWaterIntake(today, userId).collect {
+            statsRepository.getWaterIntake(date, userId).collect {
                 waterIntake = it
             }
         }
         
         // Steps
         launch {
-            statsRepository.getManualSteps(today, userId).collect {
+            statsRepository.getManualSteps(date, userId).collect {
                 stepCount = it
             }
         }
 
         // Calories
         launch {
-             foodRepository.getConsumedFoodForDate(today).collect { logs ->
+             foodRepository.getConsumedFoodForDate(date).collect { logs ->
                  var cals = 0
                  logs.forEach { item ->
                      val ratio = item.consumed.grams / 100f
@@ -121,14 +173,11 @@ class StatsViewModel @Inject constructor(
              }
         }
 
-        // Targets
-        val goals = userDao.getUserGoals(userId)
-        if (goals != null) {
-            waterTarget = goals.targetWaterMl
-            stepTarget = goals.targetSteps
-            calorieTarget = goals.targetCalories
-        }
+        // Targets (Static per user for now, but theoretically could vary by date if we stored history of goals)
+        // For now, load current goals.
+
     }
+
 
     private val _uiEvent = kotlinx.coroutines.flow.MutableSharedFlow<UiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()

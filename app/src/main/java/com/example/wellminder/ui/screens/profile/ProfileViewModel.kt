@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
@@ -185,37 +186,20 @@ class ProfileViewModel @Inject constructor(
             preferenceManager.age = age
 
             // 2. Update Goals
-            // Recalculate BMR/TDEE based on new stats
-            // Mifflin-St Jeor Equation
-            // Men: 10W + 6.25H - 5A + 5
-            // Women: 10W + 6.25H - 5A - 161
-            // We need gender.
-            val isMale = currentProfile.gender.equals("Male", ignoreCase = true) || currentProfile.gender.equals("Чоловіча", ignoreCase = true)
-            val bmr = (10 * weight) + (6.25 * height) - (5 * age) + (if (isMale) 5 else -161)
+            val isMale = currentProfile.gender.equals("Male", ignoreCase = true) || 
+                         currentProfile.gender.equals("Чоловік", ignoreCase = true) ||
+                         currentProfile.gender.equals("Чоловіча", ignoreCase = true)
+
+            val bmr = com.example.wellminder.util.GoalCalculator.calculateBMR(weight, height, age, isMale)
+            val tdee = com.example.wellminder.util.GoalCalculator.calculateTDEE(bmr)
             
-            // TDEE (Sedentary 1.2 for now as baseline)
-            val tdee = bmr * 1.2
-            
-            // Adjust for Goal
-            val targetCalories = when (goal) {
-                "LOSE" -> (tdee - 500).toInt()
-                "GAIN" -> (tdee + 500).toInt()
-                else -> tdee.toInt() // MAINTAIN
-            }
-            
-            // Water: 35ml per kg
-            val targetWater = (weight * 35).toInt()
-            
-            // Steps: Arbitrary defaults
-            val targetSteps = when (goal) {
-                "LOSE" -> 10000
-                "GAIN" -> 8000
-                else -> 8000
-            }
+            val targetCalories = com.example.wellminder.util.GoalCalculator.calculateTargetCalories(tdee, goal)
+            val targetWater = com.example.wellminder.util.GoalCalculator.calculateWaterTarget(weight)
+            val targetSteps = com.example.wellminder.util.GoalCalculator.calculateStepTarget(goal)
 
             val updatedGoals = currentGoals.copy(
                 goalType = goal,
-                targetWeight = if (goal == "LOSE") weight - 5 else if (goal == "GAIN") weight + 5 else weight, // Placeholder target weight logic
+                targetWeight = if (goal == "LOSE") weight - 5 else if (goal == "GAIN") weight + 5 else weight, 
                 targetCalories = targetCalories,
                 targetWaterMl = targetWater,
                 targetSteps = targetSteps
@@ -245,4 +229,6 @@ class ProfileViewModel @Inject constructor(
             _navigationEvent.send("login")
         }
     }
+
+
 }

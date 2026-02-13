@@ -155,7 +155,10 @@ fun GoalSelectionStep(
 
         Button(
             onClick = onNext,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFF8A00),
+                contentColor = Color.White
+            ),
             shape = RoundedCornerShape(32.dp),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
@@ -206,7 +209,10 @@ fun UserDetailsStep(
 
         Button(
             onClick = onFinish,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFFFF8A00),
+                contentColor = Color.White
+            ),
             shape = RoundedCornerShape(32.dp),
             modifier = Modifier
                 .fillMaxWidth(0.8f)

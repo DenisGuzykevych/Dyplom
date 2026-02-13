@@ -22,8 +22,11 @@ import androidx.compose.ui.window.Dialog
 import com.example.wellminder.ui.theme.Typography
 import com.example.wellminder.ui.components.PremiumCheckButton
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 
 @Composable
+
 fun EditProductOverlay(
     initialName: String,
     initialCalories: Int,
@@ -39,6 +42,8 @@ fun EditProductOverlay(
     var proteins by remember { mutableStateOf(initialProteins.toString()) }
     var carbs by remember { mutableStateOf(initialCarbs.toString()) }
     var fats by remember { mutableStateOf(initialFats.toString()) }
+    
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -49,111 +54,148 @@ fun EditProductOverlay(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
                 .clickable(onClick = onDismiss),
             contentAlignment = Alignment.Center
         ) {
             Card(
-                shape = RoundedCornerShape(32.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
+                    .fillMaxWidth(0.9f)
                     .wrapContentHeight()
                     .clickable(enabled = false) {}
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(24.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Редагувати продукт",
-                        style = Typography.headlineSmall,
-                        fontSize = 24.sp,
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.Black
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Delete Button (Optional)
-                    Button(
-                        onClick = onDelete,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFCDD2)),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.align(Alignment.End)
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(androidx.compose.material.icons.Icons.Filled.Delete, contentDescription = "Delete", tint = Color.Red)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Видалити", color = Color.Red)
+                        Text(
+                            text = "Редагувати продукт",
+                            style = Typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = Color.Black,
+                            fontSize = 18.sp
+                        )
+                        
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Save Button
+                            Button(
+                                onClick = {
+                                    val calVal = calories.toIntOrNull()
+                                    val protVal = proteins.toFloatOrNull() ?: 0f
+                                    val fatsVal = fats.toFloatOrNull() ?: 0f
+                                    val carbsVal = carbs.toFloatOrNull() ?: 0f
+                                    
+                                    if (name.isNotEmpty() && calVal != null) {
+                                        onSave(name, calVal, protVal, fatsVal, carbsVal)
+                                    } else {
+                                         android.widget.Toast.makeText(context, "Вкажіть назву та калорії", android.widget.Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text("Зберегти", fontSize = 12.sp, color = Color.White)
+                            }
+                            
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            // Delete Icon
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = Color(0xFFD32F2F),
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable { onDelete() }
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+                            
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = Color.Gray,
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable { onDismiss() }
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Fields
-                    LabeledInput(
-                        label = "Назва продукту", 
-                        placeholder = "Введіть назву продукту", 
-                        value = name, 
-                        onValueChange = { name = it }
+                    // Name Field
+                    CompactLabeledInput(
+                        label = "Назва *",
+                        placeholder = "Напр: Куряче філе",
+                        value = name,
+                        onValueChange = { name = it },
+                        modifier = Modifier.fillMaxWidth()
                     )
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    LabeledInput(
-                        label = "Калорійність на 100г", 
-                        placeholder = "Введіть у калорійність", 
-                        value = calories, 
-                        onValueChange = { if (it.all { char -> char.isDigit() }) calories = it },
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    
+                    Text(
+                        text = "На 100 г:",
+                        style = Typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+
+                    // Nutrients Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Calories
+                        CompactLabeledInput(
+                            label = "Ккал *",
+                            placeholder = "0",
+                            value = calories,
+                            onValueChange = { if (it.all { c -> c.isDigit() }) calories = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                        // Proteins
+                        CompactLabeledInput(
+                            label = "Білки",
+                            placeholder = "0",
+                            value = proteins,
+                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) proteins = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                        // Fats
+                        CompactLabeledInput(
+                            label = "Жири",
+                            placeholder = "0",
+                            value = fats,
+                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) fats = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                        // Carbs
+                        CompactLabeledInput(
+                            label = "Вуглев.",
+                            placeholder = "0",
+                            value = carbs,
+                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) carbs = it },
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.height(16.dp))
-                    LabeledInput(
-                        label = "Білки на 100г", 
-                        placeholder = "Введіть білки у грамах", 
-                        value = proteins, 
-                        onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) proteins = it },
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    LabeledInput(
-                        label = "Вуглеводи на 100г", 
-                        placeholder = "Введіть вуглеводи у грамах", 
-                        value = carbs, 
-                        onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) carbs = it },
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    LabeledInput(
-                        label = "Жири на 100г", 
-                        placeholder = "Введіть жири у грамах", 
-                        value = fats, 
-                        onValueChange = { if (it.count { char -> char == '.' } <= 1 && it.replace(".", "").all { char -> char.isDigit() }) fats = it },
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Green Checkmark Button
-                    PremiumCheckButton(
-                        onClick = {
-                            val calVal = calories.toIntOrNull()
-                            val protVal = proteins.toFloatOrNull()
-                            val fatsVal = fats.toFloatOrNull()
-                            val carbsVal = carbs.toFloatOrNull()
-                            
-                            if (name.isNotEmpty() && calVal != null && protVal != null && fatsVal != null && carbsVal != null) {
-                                onSave(name, calVal, protVal, fatsVal, carbsVal)
-                            } else {
-                                // You might need context here too if available, or just rely on visual feedback if toast is hard to access (but we can get context)
-                            }
-                        }
-                    )
-
-
                 }
             }
         }

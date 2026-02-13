@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
 import com.example.wellminder.ui.components.BottomNavigationBar
 import com.example.wellminder.ui.components.TopBarSection
 import com.example.wellminder.ui.theme.Typography
@@ -161,13 +163,18 @@ fun ProfileScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    UserInfoRow("І'мя:", viewModel.userProfile?.name ?: "Гість")
-                    UserInfoRow("Стать:", viewModel.userProfile?.gender ?: "-")
+                    UserInfoRow("Ім'я:", viewModel.userProfile?.name ?: "Гість")
+                    val genderDisplay = when(viewModel.userProfile?.gender?.lowercase()) {
+                        "male", "чоловік" -> "Чоловік"
+                        "female", "жінка" -> "Жінка"
+                        else -> viewModel.userProfile?.gender ?: "-"
+                    }
+                    UserInfoRow("Стать:", genderDisplay)
                     UserInfoRow("Поточна вага:", "${viewModel.userProfile?.currentWeight?.toInt() ?: 0}кг")
                     val goalText = when(viewModel.userGoals?.goalType) {
-                        "LOSE" -> "схуднути"
-                        "GAIN" -> "набрати вагу"
-                        else -> "підтримувати форму"
+                        "LOSE" -> "Схуднути"
+                        "GAIN" -> "Набрати вагу"
+                        else -> "Підтримувати форму"
                     }
                     UserInfoRow("Мета:", goalText)
                     // Calculate age from birthDate
@@ -177,7 +184,7 @@ fun ProfileScreen(
                          java.time.Period.between(birthDate, now).years.toString()
                     } else "0"
                     
-                    UserInfoRow("вік:", age)
+                    UserInfoRow("Вік:", age)
                     UserInfoRow("Зріст:", "${viewModel.userProfile?.height ?: 0}")
                 }
             }
@@ -201,13 +208,49 @@ fun ProfileScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            ProfileActionButton(
-                text = "З'єднання з Health Connect",
-                icon = Icons.Default.Favorite, // Using Favorite as placeholder for Health Connect
-                onClick = { showHealthConnect = true }
-            )
+            Button(
+                onClick = { showHealthConnect = true },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .shadow(4.dp, RoundedCornerShape(32.dp)),
+                contentPadding = PaddingValues(horizontal = 24.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(44.dp) // Container size
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(id = com.example.wellminder.R.drawable.hc),
+                            contentDescription = "Health Connect",
+                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                            modifier = Modifier.size(28.dp) // Logo size inside the circle (padding effect)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Text(
+                        text = "З’єднання з Health Connect",
+                        style = Typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+                        color = Color.White,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+            
             
             Spacer(modifier = Modifier.height(16.dp))
+
             
             // Logout Button
             ProfileActionButton(
@@ -226,7 +269,7 @@ fun ProfileScreen(
                 containerColor = Color(0xFFD32F2F) // Red for delete
             )
             
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
     }
