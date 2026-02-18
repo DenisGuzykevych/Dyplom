@@ -88,7 +88,6 @@ class OnboardingViewModel @Inject constructor(
                         targetWeight = weight,
                         targetWaterMl = targetWater,
                         targetSteps = targetSteps,
-                        targetCalories = targetCalories,
                         targetProteins = targetProteins,
                         targetFats = targetFats,
                         targetCarbs = targetCarbs,

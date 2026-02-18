@@ -29,22 +29,18 @@ class MainActivity : ComponentActivity() {
         
         var startDest = "login"
         if (preferenceManager.isLoggedIn) {
-            // Use a coroutine or runBlocking for a simple check at startup
-            // Actually, keep it simple: if DB was wiped, userDao check will reveal it.
-            // Since this is onCreate, we can use a small lifecycleScope check or just try-catch.
-            // Simplified approach for immediate startDest decision:
+            // Використовуємо корутину або runBlocking для простої перевірки при запуску
             startDest = "home"
         }
         
-        // Critical: Check if user data exists effectively. 
-        // We do this inside WellMinderTheme to handle navigation updates if needed,
-        // or just here for the initial startDest.
+        // Ми робимо це всередині WellMinderTheme, щоб за потреби оновити навігацію,
+        // або просто тут для початкового вибору екрана.
         
         scheduleDailySummaryWorker()
 
         setContent {
             WellMinderTheme {
-                // Determine actual start destination reactively
+                // Визначаємо справжній початковий екран реактивно
                 val isLoggedIn = preferenceManager.isLoggedIn
                 var finalStartDest by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(if (isLoggedIn) "home" else "login") }
                 
@@ -74,7 +70,7 @@ class MainActivity : ComponentActivity() {
 
         val currentDate = Calendar.getInstance()
         val dueDate = Calendar.getInstance()
-        // Set Execution around 00:01:00.
+        // Встановлюємо виконання приблизно на 00:01:00.
         dueDate.set(Calendar.HOUR_OF_DAY, 0)
         dueDate.set(Calendar.MINUTE, 1)
         dueDate.set(Calendar.SECOND, 0)

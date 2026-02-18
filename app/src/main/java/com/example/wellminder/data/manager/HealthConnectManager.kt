@@ -58,7 +58,7 @@ class HealthConnectManager @Inject constructor(
             val breakdown = mutableMapOf<String, Long>()
             response.records.forEach { record ->
                 val packageName = record.metadata.dataOrigin.packageName
-                val deviceModel = record.metadata.device?.model ?: "Unknown Device"
+                val deviceModel = record.metadata.device?.model ?: "Невідомий пристрій"
                 val key = "$packageName ($deviceModel)"
                 val count = record.count
                 breakdown[key] = (breakdown[key] ?: 0L) + count
@@ -92,8 +92,8 @@ class HealthConnectManager @Inject constructor(
     }
 
     /**
-     * Deletes any steps written by WellMinder for the given date.
-     * This ensures Health Connect only contains "Sensor" data from other apps.
+     * Видаляє будь-які кроки, записані WellMinder для даної дати.
+     * Це гарантує, що Health Connect містить лише дані "сенсорів" з інших програм.
      */
     suspend fun clearWellMinderSteps(date: java.time.LocalDate) {
         try {
@@ -117,7 +117,7 @@ class HealthConnectManager @Inject constructor(
                     recordIdsList = recordsToDelete.map { it.metadata.id },
                     clientRecordIdsList = emptyList()
                 )
-                android.util.Log.d("HealthConnectManager", "Cleared ${recordsToDelete.size} WellMinder records to ensure pure sensor data.")
+                android.util.Log.d("HealthConnectManager", "Видалено ${recordsToDelete.size} записів WellMinder, щоб залишити тільки чисті дані сенсорів.")
             }
         } catch (e: Exception) {
              android.util.Log.e("HealthConnectManager", "clearWellMinderSteps error", e)
@@ -136,7 +136,7 @@ class HealthConnectManager @Inject constructor(
                 val end = java.time.LocalDateTime.ofInstant(record.endTime, java.time.ZoneId.systemDefault()).toLocalTime()
                 val count = record.count
                 val source = record.metadata.dataOrigin.packageName
-                // Simplify source name
+                // Спрощуємо назву джерела
                 val simpleSource = if (source.contains("xiaomi")) "Xiaomi" else if (source.contains("google")) "Google" else source
                 "$start - $end: $count ($simpleSource)"
             }
@@ -147,6 +147,6 @@ class HealthConnectManager @Inject constructor(
     }
     
     suspend fun debugLogAllStepsForToday(date: java.time.LocalDate) {
-        // ... kept for backward compatibility or can be removed if not used
+        // ... залишено для зворотної сумісності або можна видалити, якщо не використовується
     }
 }

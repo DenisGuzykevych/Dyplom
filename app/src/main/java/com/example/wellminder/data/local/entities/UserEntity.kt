@@ -11,8 +11,8 @@ import androidx.room.PrimaryKey
 data class UserEntity(
     @PrimaryKey(autoGenerate = true)
     val userId: Long = 0,
-    val email: String? = null, // Nullable for Guest
-    val passwordHash: String? = null, // Nullable for Guest
+    val email: String? = null, // Може бути null, якщо це Гість
+    val passwordHash: String? = null, // Теж null для Гостя
     val isGuest: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

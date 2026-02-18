@@ -8,14 +8,14 @@ object GoalCalculator {
         LOSE, MAINTAIN, GAIN
     }
 
-    // Mifflin-St Jeor Equation
+    // Формула Міффліна-Сент-Жеора
     fun calculateBMR(weightKg: Float, heightCm: Int, age: Int, isMale: Boolean): Float {
         val s = if (isMale) 5 else -161
         return (10 * weightKg) + (6.25f * heightCm) - (5 * age) + s
     }
 
-    // TDEE with default Sedentary activity multiplier (1.2)
-    // We can expand this later if we add Activity Level selection
+    // TDEE з коефіцієнтом активності за замовчуванням (1.2 - сидячий спосіб життя)
+    // Можна розширити пізніше, якщо додамо вибір рівня активності
     fun calculateTDEE(bmr: Float, activityMultiplier: Float = 1.2f): Float {
         return bmr * activityMultiplier
     }
@@ -26,13 +26,13 @@ object GoalCalculator {
             "GAIN" -> tdee + 500
             else -> tdee
         }
-        // Round to nearest 100
+        // Округлити до найближчих 100
         return (adjusted / 100).roundToInt() * 100
     }
 
     fun calculateWaterTarget(weightKg: Float): Int {
-        val raw = weightKg * 35 // 35ml per kg
-        // Round to nearest 100
+        val raw = weightKg * 35 // 35 мл на кг
+        // Округлити до найближчих 100
         return (raw / 100).roundToInt() * 100
     }
 
@@ -42,17 +42,17 @@ object GoalCalculator {
             "GAIN" -> 8000
             else -> 8000
         }
-        // Round to nearest 1000
+        // Округлити до найближчих 1000
         return (raw / 1000) * 1000
     }
 
-    // Returns Triple(Proteins, Fats, Carbs) in grams based on Weight
+    // Повертає Triple(Білки, Жири, Вуглеводи) в грамах на основі ваги
     fun calculateMacros(weightKg: Float, goalType: String): Triple<Float, Float, Float> {
-        // Coefficients (g per kg of weight)
+        // Коефіцієнти (г на кг ваги)
         val (pCoeff, fCoeff, cCoeff) = when (goalType.uppercase()) {
-            "LOSE" -> Triple(2.0f, 0.8f, 2.0f)     // Higher protein, lower carbs/fats
-            "GAIN" -> Triple(1.8f, 1.2f, 5.0f)     // Moderate protein, higher calories/carbs
-            else -> Triple(1.5f, 1.0f, 3.0f)       // Standard (MAINTAIN)
+            "LOSE" -> Triple(2.0f, 0.8f, 2.0f)     // Більше білка, менше вуглеводів/жирів
+            "GAIN" -> Triple(1.8f, 1.2f, 5.0f)     // Помірний білок, більше калорій/вуглеводів
+            else -> Triple(1.5f, 1.0f, 3.0f)       // Стандарт (ПІДТРИМКА)
         }
 
         val pGrams = (weightKg * pCoeff).roundToInt().toFloat()
@@ -63,8 +63,6 @@ object GoalCalculator {
     }
 
     fun calculateCaloriesFromMacros(p: Float, f: Float, c: Float): Int {
-        val raw = p * 4 + f * 9 + c * 4
-        // Round to nearest 100
-        return (raw / 100).roundToInt() * 100
+        return (p * 4 + f * 9 + c * 4).roundToInt()
     }
 }

@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.wellminder.data.local.dao.ConsumedFoodDetail
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
+import com.example.wellminder.data.local.entities.FoodWithNutrients
 import com.example.wellminder.ui.components.BottomNavigationBar
 import com.example.wellminder.ui.components.MealType
 import com.example.wellminder.ui.components.ReusableFoodSection
@@ -47,16 +47,16 @@ fun FoodScreen(
     val consumedFoodList by viewModel.consumedFoodList.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     
-    // State for dialogs
+    // Стан для діалогів
     var showAddProductOverlay by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var itemToDelete by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
-    var editProductItem by remember { mutableStateOf<FoodWithNutrientsAndCategory?>(null) }
-    var itemToAdd by remember { mutableStateOf<FoodWithNutrientsAndCategory?>(null) }
+    var editProductItem by remember { mutableStateOf<FoodWithNutrients?>(null) }
+    var itemToAdd by remember { mutableStateOf<FoodWithNutrients?>(null) }
     
     val context = LocalContext.current
     
-    // Meal Selection State
+    // Стан вибору прийому їжі
     var selectedMeal by remember { mutableStateOf(MealType.BREAKFAST) }
 
     Scaffold(
@@ -79,9 +79,9 @@ fun FoodScreen(
             TopBarSection()
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 1. TOP SECTION: Available Food Library
-            // Fixed height or weight to ensure it doesn't take up too much space
-            // 1. TOP SECTION: Available Food Library
+            // 1. ВЕРХНЯ СЕКЦІЯ: Бібліотека доступних продуктів
+            // Фіксована висота або вага, щоб не займало надто багато місця
+            // 1. ВЕРХНЯ СЕКЦІЯ: Бібліотека доступних продуктів
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -92,7 +92,7 @@ fun FoodScreen(
                     .weight(0.35f) 
             ) {
                 Column {
-                    // Header for List
+                    // Заголовок списку
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -107,7 +107,7 @@ fun FoodScreen(
                             color = Color.Gray
                         )
                         
-                        // "Add Custom Product" Button in Header
+                        // Кнопка "Додати свій продукт" у заголовку
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -148,7 +148,14 @@ fun FoodScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(item.food.name, style = Typography.bodyMedium, fontWeight = FontWeight.Bold)
-                                    Text("${item.nutrients?.calories} ккал", style = Typography.bodySmall, color = Color.Gray)
+                                    val dbCals = item.nutrients?.calories ?: 0
+                                    val calcCals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                                        item.nutrients?.proteins ?: 0f,
+                                        item.nutrients?.fats ?: 0f,
+                                        item.nutrients?.carbohydrates ?: 0f
+                                    )
+                                    val displayCals = if (dbCals > 0) dbCals else calcCals
+                                    Text("$displayCals ккал", style = Typography.bodySmall, color = Color.Gray)
                                 }
                                 
                                  Icon(
@@ -179,7 +186,7 @@ fun FoodScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 2. MIDDLE SECTION: Search Bar
+            // 2. СЕРЕДНЯ СЕКЦІЯ: Пошук
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.onSearchQueryChange(it) },
@@ -208,7 +215,7 @@ fun FoodScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 3. BOTTOM SECTION: Meal Tabs & Consumed List
+            // 3. НИЖНЯ СЕКЦІЯ: Вкладки їжі та список спожитого
             Card(
                 shape = RoundedCornerShape(32.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -218,7 +225,7 @@ fun FoodScreen(
                     .shadow(4.dp, RoundedCornerShape(32.dp))
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // Custom Tab Row Refined
+                    // Покращений рядок вкладок
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -231,7 +238,7 @@ fun FoodScreen(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(50.dp) // Fixed height for uniformity
+                                    .height(50.dp) // Фіксована висота для однаковості
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(if (isSelected) Color(0xFFFF8A00) else Color.Transparent)
                                     .clickable { selectedMeal = meal },
@@ -252,7 +259,7 @@ fun FoodScreen(
                                 }
                             }
                             
-                            // Vertical Divider Logic
+                            // Логіка вертикального роздільника
                             if (index < MealType.entries.size - 1) {
                                 VerticalDivider(
                                     modifier = Modifier
@@ -267,7 +274,7 @@ fun FoodScreen(
 
                     HorizontalDivider(color = Color(0xFFF5F5F5))
 
-                    // Consumed List for Selected Meal
+                    // Список спожитого для обраного прийому їжі
                     val filteredLogs = consumedFoodList.filter { it.consumed.mealType == selectedMeal.title }
                     
                     Box(modifier = Modifier.weight(1f)) {
@@ -299,18 +306,22 @@ fun FoodScreen(
                         }
                     }
 
-                    // 4. FOOTER: Meal Analysis
+                    // 4. ПІДВАЛ: Аналіз прийому їжі
                     HorizontalDivider(color = Color(0xFFEEEEEE))
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val totalCals = filteredLogs.sumOf { 
-                            ((it.nutrients?.calories ?: 0) * (it.consumed.grams / 100f)).toInt()
+                        val totalCals = filteredLogs.sumOf { item ->
+                            val ratio = item.consumed.grams / 100f
+                            val p = (item.nutrients?.proteins ?: 0f) * ratio
+                            val f = (item.nutrients?.fats ?: 0f) * ratio
+                            val c = (item.nutrients?.carbohydrates ?: 0f) * ratio
+                            com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
                         }
                         
-                        // Get target from ViewModel (assuming it's added)
-                        val targetCalories = viewModel.targetCalories // Need to ensure this exists
+                        // Отримуємо ціль з ViewModel (якщо вона додана)
+                        val targetCalories = viewModel.targetCalories // Треба переконатися, що це існує
                         
                         val mealTargetPercentage = when(selectedMeal) {
                             MealType.BREAKFAST -> 0.25f
@@ -320,7 +331,7 @@ fun FoodScreen(
                         }
                         val mealTarget = (targetCalories * mealTargetPercentage).toInt()
                         
-                        // Analysis
+                        // Аналіз результатів
                         val (statusText, statusColor) = when {
                              totalCals < mealTarget * 0.8 -> "Мало" to Color(0xFFFFB74D) // Orange
                              totalCals > mealTarget * 1.2 -> "Перебір" to Color(0xFFEF5350) // Red
@@ -349,12 +360,12 @@ fun FoodScreen(
         }
     }
 
-    // Dialogs
+    // Діалоги
     if (showAddProductOverlay) {
         AddProductOverlay(
             onDismiss = { showAddProductOverlay = false },
-            onSave = { name, cals, prot, fats, carbs ->
-                viewModel.addFood(name, cals, prot, fats, carbs)
+            onSave = { name, prot, fats, carbs, cals ->
+                viewModel.addFood(name, prot, fats, carbs, cals)
                 showAddProductOverlay = false
             }
         )
@@ -374,15 +385,20 @@ fun FoodScreen(
     
     if (editProductItem != null) {
         val item = editProductItem!!
+        val calculated = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+            item.nutrients?.proteins ?: 0f,
+            item.nutrients?.fats ?: 0f,
+            item.nutrients?.carbohydrates ?: 0f
+        )
         EditProductOverlay(
             initialName = item.food.name,
-            initialCalories = item.nutrients?.calories ?: 0,
             initialProteins = item.nutrients?.proteins ?: 0f,
             initialFats = item.nutrients?.fats ?: 0f,
             initialCarbs = item.nutrients?.carbohydrates ?: 0f,
+            initialCalories = if ((item.nutrients?.calories ?: 0) > 0) item.nutrients!!.calories else calculated,
             onDismiss = { editProductItem = null },
-            onSave = { name, cals, prot, fats, carbs ->
-                viewModel.updateFood(item, name, cals, prot, fats, carbs)
+            onSave = { name, prot, fats, carbs, cals ->
+                viewModel.updateFood(item, name, prot, fats, carbs, cals)
                 editProductItem = null
             },
             onDelete = {
@@ -427,7 +443,10 @@ fun ConsumedFoodItem(
     onDeleteClick: () -> Unit
 ) {
     val grams = item.consumed.grams
-    val cals = ((item.nutrients?.calories ?: 0) * (grams / 100f)).toInt()
+    val p = (item.nutrients?.proteins ?: 0f) * (grams / 100f)
+    val f = (item.nutrients?.fats ?: 0f) * (grams / 100f)
+    val c = (item.nutrients?.carbohydrates ?: 0f) * (grams / 100f)
+    val cals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
     
     Row(
         modifier = Modifier

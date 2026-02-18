@@ -27,8 +27,13 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     
+    // Валідація
+    val isEmailValid = remember(email) { android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() }
+    val isPasswordValid = remember(password) { password.length >= 8 }
+    val isFormValid = isEmailValid && isPasswordValid
+    
     val authState by viewModel.authState.collectAsState()
-    var errorMessage by remember { mutableStateOf<String?>(null) } // Local state for message
+    var errorMessage by remember { mutableStateOf<String?>(null) } // Локальний стан для повідомлення
 
     LaunchedEffect(authState) {
         when (val state = authState) {
@@ -38,7 +43,7 @@ fun LoginScreen(
             }
             is AuthState.Error -> {
                 errorMessage = state.message
-                viewModel.resetState() // Consume the error
+                viewModel.resetState() // Скидаємо помилку
             }
             else -> {}
         }
@@ -75,13 +80,22 @@ fun LoginScreen(
             label = { Text("Електронна пошта") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Email),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = OrangePrimary,
                 focusedLabelColor = OrangePrimary,
                 cursorColor = OrangePrimary
             ),
-             isError = errorMessage != null
+             isError = (errorMessage != null) || (email.isNotEmpty() && !isEmailValid)
         )
+        if (email.isNotEmpty() && !isEmailValid) {
+            Text(
+                text = "Невірний формат пошти",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -118,10 +132,10 @@ fun LoginScreen(
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = OrangePrimary,
+                containerColor = if (isFormValid) OrangePrimary else Color.Gray,
                 contentColor = Color.White // Force white text
             ),
-            enabled = authState != AuthState.Loading
+            enabled = authState != AuthState.Loading && isFormValid
         ) {
             if (authState == AuthState.Loading) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
@@ -135,7 +149,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Skip Button
+        // Кнопка пропуску
         TextButton(onClick = { viewModel.continueGuest() }) {
             Text(
                 text = "Пропустити (Гостьовий режим)",

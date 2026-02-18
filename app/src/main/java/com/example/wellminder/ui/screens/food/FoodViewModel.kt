@@ -3,13 +3,16 @@ package com.example.wellminder.ui.screens.food
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
+import com.example.wellminder.data.local.entities.FoodWithNutrients
+import com.example.wellminder.data.local.entities.FoodEntity
+import com.example.wellminder.data.local.entities.FoodNutrientEntity
 import com.example.wellminder.data.repository.FoodRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
@@ -31,41 +34,25 @@ class FoodViewModel @Inject constructor(
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 val foodDao = appDatabase.foodDao()
-                val categoriesMap = mutableMapOf<String, Long>()
 
                 com.example.wellminder.data.local.InitialFoodData.list.forEach { item ->
-                    // 1. Get or Insert Category
-                    val categoryName = item.category
-                    var categoryId = categoriesMap[categoryName]
-                    
-                    if (categoryId == null) {
-                        val existingCategory = foodDao.getCategoryByName(categoryName)
-                        if (existingCategory != null) {
-                            categoryId = existingCategory.categoryId
-                        } else {
-                            val newCategory = com.example.wellminder.data.local.entities.FoodCategoryEntity(name = categoryName)
-                            categoryId = foodDao.insertCategory(newCategory)
-                        }
-                        categoriesMap[categoryName] = categoryId!!
-                    }
-
-                    // 2. Check if Food exists
+                    // 1. Перевіряємо, чи такий продукт вже є
                     val existingFood = foodDao.getFoodByName(item.name)
                     if (existingFood == null) {
-                        // Insert Food
-                        val food = com.example.wellminder.data.local.entities.FoodEntity(
-                            name = item.name,
-                            categoryId = categoryId
+                        // Додаємо сам продукт
+                        val food = FoodEntity(
+                            name = item.name
                         )
                         val foodId = foodDao.insertFood(food)
 
-                        // 3. Insert Nutrients
-                        val nutrients = com.example.wellminder.data.local.entities.FoodNutrientEntity(
+                        // 2. Додаємо нутрієнти
+                        val initialCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(item.prot, item.fats, item.carbs)
+                        val nutrients = FoodNutrientEntity(
                             foodId = foodId,
-                            calories = item.cals,
                             proteins = item.prot,
                             fats = item.fats,
-                            carbohydrates = item.carbs
+                            carbohydrates = item.carbs,
+                            calories = initialCalories
                         )
                         foodDao.insertNutrients(nutrients)
                     }
@@ -93,7 +80,9 @@ class FoodViewModel @Inject constructor(
                 if (userId != -1L) {
                     val goals = userDao.getUserGoals(userId)
                     if (goals != null) {
-                        targetCalories = goals.targetCalories
+                        targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                            goals.targetProteins, goals.targetFats, goals.targetCarbs
+                        )
                     }
                 }
             }
@@ -102,12 +91,12 @@ class FoodViewModel @Inject constructor(
         viewModelScope.launch {
             val currentFood = repository.getAllFood().firstOrNull() ?: emptyList()
             if (!preferenceManager.isFoodPopulated || currentFood.isEmpty()) {
-                populateFoodDb { /* silent initialization */ }
+                populateFoodDb { /* тиха ініціалізація */ }
             }
         }
     }
 
-    val foodList: StateFlow<List<FoodWithNutrientsAndCategory>> = repository.getAllFood()
+    val foodList: StateFlow<List<FoodWithNutrients>> = repository.getAllFood()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -117,7 +106,7 @@ class FoodViewModel @Inject constructor(
     private val _searchQuery = kotlinx.coroutines.flow.MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val filteredFoodList: StateFlow<List<FoodWithNutrientsAndCategory>> = kotlinx.coroutines.flow.combine(
+    val filteredFoodList: StateFlow<List<FoodWithNutrients>> = kotlinx.coroutines.flow.combine(
         foodList,
         _searchQuery
     ) { list, query ->
@@ -138,48 +127,57 @@ class FoodViewModel @Inject constructor(
 
     fun addFood(
         name: String,
-        calories: Int,
         proteins: Float,
         fats: Float,
-        carbs: Float
+        carbs: Float,
+        calories: Int
     ) {
         viewModelScope.launch {
-            repository.saveFood(name, calories, proteins, fats, carbs)
+            repository.saveFood(name, proteins, fats, carbs, calories)
         }
     }
 
     fun updateFood(
-        foodWithDetails: FoodWithNutrientsAndCategory,
+        foodWithDetails: FoodWithNutrients,
         name: String,
-        calories: Int,
         proteins: Float,
         fats: Float,
-        carbs: Float
+        carbs: Float,
+        calories: Int
     ) {
         val foodId = foodWithDetails.food.foodId
-        val nutrientId = foodWithDetails.nutrients?.nutrientId ?: 0 // Handle missing nutrients if any
-        val categoryId = foodWithDetails.food.categoryId
+        val nutrientId = foodWithDetails.nutrients?.nutrientId ?: 0 // Обробити випадок, якщо нутрієнтів немає (хоча це дивно)
 
         viewModelScope.launch {
             repository.updateFood(
                 foodId = foodId,
                 nutrientId = nutrientId,
                 name = name,
-                calories = calories,
                 proteins = proteins,
                 fats = fats,
                 carbs = carbs,
-                categoryId = categoryId
+                calories = calories
             )
         }
     }
 
-    val consumedFoodList: StateFlow<List<com.example.wellminder.data.local.dao.ConsumedFoodDetail>> = repository.getAllConsumedFood()
+    private val _selectedDate = kotlinx.coroutines.flow.MutableStateFlow(java.time.LocalDate.now())
+    val selectedDate: StateFlow<java.time.LocalDate> = _selectedDate.asStateFlow()
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val consumedFoodList: StateFlow<List<com.example.wellminder.data.local.dao.ConsumedFoodDetail>> = _selectedDate
+        .flatMapLatest { date ->
+            repository.getConsumedFoodForDate(date)
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    fun onDateChange(date: java.time.LocalDate) {
+        _selectedDate.value = date
+    }
 
     fun logConsumedFood(foodId: Long, grams: Int, mealType: String) {
         viewModelScope.launch {
@@ -199,7 +197,7 @@ class FoodViewModel @Inject constructor(
         }
     }
 
-    fun deleteFood(foodWithDetails: FoodWithNutrientsAndCategory) {
+    fun deleteFood(foodWithDetails: FoodWithNutrients) {
         viewModelScope.launch {
             repository.deleteFood(foodWithDetails.food.foodId)
         }

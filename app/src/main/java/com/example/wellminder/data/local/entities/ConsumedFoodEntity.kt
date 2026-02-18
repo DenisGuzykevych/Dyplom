@@ -19,9 +19,9 @@ import androidx.room.Index
 )
 data class ConsumedFoodEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val userId: Long, // Link to User
+    val userId: Long, // ID юзера, який це з'їв
     val foodId: Long,
     val grams: Int,
-    val mealType: String, // "Breakfast", "Lunch", "Dinner", "Snack"
+    val mealType: String, // "Breakfast" (Сніданок), "Lunch" (Обід), "Dinner" (Вечеря), "Snack" (Перекус)
     val timestamp: Long = System.currentTimeMillis()
 )

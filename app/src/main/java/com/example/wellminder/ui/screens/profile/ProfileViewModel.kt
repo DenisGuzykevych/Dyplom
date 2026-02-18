@@ -64,7 +64,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-     // Determine fetchUserProfile signature change or overload
+     // Визначаємо, як завантажувати профіль
     fun fetchUserProfile(userId: Long = preferenceManager.userId) {
         viewModelScope.launch {
             if (userId != -1L) {
@@ -100,7 +100,7 @@ class ProfileViewModel @Inject constructor(
     fun fetchSteps() {
         viewModelScope.launch {
             if (healthConnectManager.hasAllPermissions()) {
-                val currentProfile = userProfile // userProfile is already loaded in VM state
+                val currentProfile = userProfile // Профіль вже завантажений у стейт ViewModel
                 val syncStartTime = currentProfile?.healthConnectSyncStartTime?.let { Instant.ofEpochMilli(it) }
 
                 val now = Instant.now()
@@ -109,15 +109,15 @@ class ProfileViewModel @Inject constructor(
                     .atStartOfDay(ZoneId.systemDefault())
                     .toInstant()
                 
-                // Use the later of startOfDay or syncStartTime
+                // Беремо пізніший час (початок дня або час синхронізації)
                 val effectiveStartTime = if (syncStartTime != null && syncStartTime.isAfter(startOfDay)) {
                     syncStartTime
                 } else {
                     startOfDay
                 }
                 
-                // If effective start time is after now (or very close), queries might return 0 which is correct.
-                // We must ensure we don't query if effective > now (though readSteps handles it usually).
+                // Якщо час старту пізніше ніж зараз -> поверне 0 (це ок)
+                // Не запитуємо дані з майбутнього
                 
                 steps = healthConnectManager.readSteps(effectiveStartTime, now).toInt()
                 stepsBreakdown = healthConnectManager.getStepsBreakdown(effectiveStartTime, now)
@@ -130,8 +130,8 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             val currentProfile = userProfile ?: return@launch
             
-            // If enabling, set start time to NOW. If disabling, maybe clear it? 
-            // Better to clear it on disable to reset the state.
+            // Якщо вмикаємо -> ставимо час "ЗАРАЗ". Якщо вимикаємо -> null? 
+            // Краще очистити, щоб скинути стан.
             val syncTime = if (enabled) System.currentTimeMillis() else null
             
             val updatedProfile = currentProfile.copy(
@@ -139,7 +139,7 @@ class ProfileViewModel @Inject constructor(
                 healthConnectSyncStartTime = syncTime
             )
             appDatabase.userDao().updateProfile(updatedProfile)
-            fetchUserProfile() // Refresh UI
+            fetchUserProfile() // Оновлюємо UI
             if (enabled) {
                 checkPermissions()
             }
@@ -152,25 +152,25 @@ class ProfileViewModel @Inject constructor(
             val updatedProfile = currentProfile.copy(name = newName)
             appDatabase.userDao().updateProfile(updatedProfile)
             
-            // Update Prefs
+            // Оновлюємо SharedPreferences
             preferenceManager.userName = newName
             
-            fetchUserProfile() // Refresh
+            fetchUserProfile() // Оновлюємо UI
         }
     }
 
     fun saveGoalsAndStats(goal: String, weight: Float, height: Int, age: Int) {
         viewModelScope.launch {
             val currentProfile = userProfile ?: return@launch
-            val currentGoals = userGoals ?: return@launch // Should exist if profile exists
+            val currentGoals = userGoals ?: return@launch // Має існувати, якщо є профіль
             
-            // 1. Update Profile (Body Stats)
-            // Calculate birthDate from age (approx) if needed, or just keep existing dateOfBirth if age didn't change enough to warrant recalc?
-            // Actually, we store dateOfBirth. Converting Age -> DOB is lossy. 
-            // Better to only update DOB if we really want to. 
-            // Let's assume for this "Modernization" we just update weight/height/goal. 
-            // If the user expects Age to be saved, we must update DOB.
-            // Let's approximate: DOB = Now - Age years.
+            // 1. Оновлюємо дані тіла в профілі
+            // Чи треба перераховувати дату народження з віку?
+            // Насправді ми зберігаємо дату народження. Конвертація Вік -> Дата неточна.
+            // Краще не чіпати, якщо не треба.
+            // Припустимо, що тут ми оновлюємо тільки вагу/зріст/цілі.
+            // Але якщо юзер змінив вік, мусимо оновити й дату народження.
+            // Приблизно: ДН = Сьогодні - Вік.
             val estimatedDOB = java.time.LocalDate.now().minusYears(age.toLong())
                 .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
 
@@ -181,12 +181,12 @@ class ProfileViewModel @Inject constructor(
             )
             appDatabase.userDao().updateProfile(updatedProfile)
             
-            // Update Prefs
+            // Оновлюємо SharedPreferences
             preferenceManager.weight = weight
             preferenceManager.height = height.toFloat()
             preferenceManager.age = age
 
-            // 2. Update Goals
+            // 2. Оновлюємо цілі
             val isMale = currentProfile.gender.equals("Male", ignoreCase = true) || 
                          currentProfile.gender.equals("Чоловік", ignoreCase = true) ||
                          currentProfile.gender.equals("Чоловіча", ignoreCase = true)
@@ -201,8 +201,7 @@ class ProfileViewModel @Inject constructor(
 
             val updatedGoals = currentGoals.copy(
                 goalType = goal,
-                targetWeight = if (goal == "LOSE") weight - 5 else if (goal == "GAIN") weight + 5 else weight, 
-                targetCalories = targetCalories,
+                targetWeight = if (goal == "LOSE") weight - 5 else if (goal == "GAIN") weight + 5 else weight,
                 targetProteins = targetProteins,
                 targetFats = targetFats,
                 targetCarbs = targetCarbs,
@@ -211,7 +210,7 @@ class ProfileViewModel @Inject constructor(
             )
             appDatabase.userDao().updateGoals(updatedGoals)
             
-            fetchUserProfile() // Refresh
+            fetchUserProfile() // Оновлюємо UI
         }
     }
 

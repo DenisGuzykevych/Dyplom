@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "daily_steps", primaryKeys = ["date", "userId"])
 data class DailyStepsEntity(
-    val date: String, // Format: YYYY-MM-DD
+    val date: String, // Формат: "YYYY-MM-DD"
     val userId: Long,
     val manualStepCount: Int = 0
 )

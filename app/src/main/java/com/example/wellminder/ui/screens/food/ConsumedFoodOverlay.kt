@@ -2,39 +2,32 @@ package com.example.wellminder.ui.screens.food
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
+import com.example.wellminder.data.local.entities.FoodWithNutrients
 import com.example.wellminder.ui.theme.Typography
-import com.example.wellminder.ui.components.PremiumCheckButton
 
 @Composable
 fun ConsumedFoodOverlay(
@@ -45,7 +38,7 @@ fun ConsumedFoodOverlay(
     val filteredList by viewModel.filteredFoodList.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     
-    var selectedFood by remember { mutableStateOf<FoodWithNutrientsAndCategory?>(null) }
+    var selectedFood by remember { mutableStateOf<FoodWithNutrients?>(null) }
     var gramsInput by remember { mutableStateOf("100") }
 
     Dialog(
@@ -171,8 +164,13 @@ fun ConsumedFoodOverlay(
                                                 style = Typography.bodyMedium,
                                                 fontWeight = FontWeight.Medium
                                             )
+                                            val cals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                                                item.nutrients?.proteins ?: 0f,
+                                                item.nutrients?.fats ?: 0f,
+                                                item.nutrients?.carbohydrates ?: 0f
+                                            )
                                             Text(
-                                                text = "${item.nutrients?.calories ?: 0} ккал / 100г",
+                                                text = "$cals ккал / 100г",
                                                 style = Typography.bodySmall,
                                                 color = Color.Gray
                                             )
@@ -198,6 +196,7 @@ fun ConsumedFoodOverlay(
 
                     // Bottom Edit Panel
                     if (selectedFood != null) {
+                         val sf = selectedFood!!
                          Column(
                              modifier = Modifier
                                  .fillMaxWidth()
@@ -206,7 +205,7 @@ fun ConsumedFoodOverlay(
                              horizontalAlignment = Alignment.CenterHorizontally
                          ) {
                              Text(
-                                 text = selectedFood?.food?.name ?: "",
+                                 text = sf.food.name,
                                  style = Typography.titleMedium,
                                  fontWeight = FontWeight.Bold
                              )
@@ -224,7 +223,7 @@ fun ConsumedFoodOverlay(
                                      onValueChange = { if (it.all { char -> char.isDigit() }) gramsInput = it },
                                      textStyle = Typography.titleMedium.copy(textAlign = TextAlign.Center),
                                      singleLine = true,
-                                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                      modifier = Modifier
                                          .width(80.dp)
                                          .background(Color.White, RoundedCornerShape(8.dp))
@@ -236,7 +235,10 @@ fun ConsumedFoodOverlay(
                              
                              val grams = gramsInput.toIntOrNull() ?: 0
                              val factor = grams / 100f
-                             val cals = ((selectedFood?.nutrients?.calories ?: 0) * factor).toInt()
+                             val p = (sf.nutrients?.proteins ?: 0f) * factor
+                             val f = (sf.nutrients?.fats ?: 0f) * factor
+                             val c = (sf.nutrients?.carbohydrates ?: 0f) * factor
+                             val cals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
                              
                              Text(
                                  text = "Разом: $cals ккал",
@@ -251,7 +253,7 @@ fun ConsumedFoodOverlay(
                                  onClick = {
                                      val gramsVal = gramsInput.toIntOrNull()
                                      if (gramsVal != null && gramsVal > 0) {
-                                         viewModel.logConsumedFood(selectedFood!!.food.foodId, gramsVal, mealType)
+                                         viewModel.logConsumedFood(sf.food.foodId, gramsVal, mealType)
                                          onDismiss()
                                      }
                                  },

@@ -5,7 +5,7 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "water_intake", primaryKeys = ["date", "userId"])
 data class WaterIntakeEntity(
-    val date: String, // Format: YYYY-MM-DD
+    val date: String, // "YYYY-MM-DD"
     val userId: Long,
-    val intakeAmount: Int = 0 // in milliliters
+    val intakeAmount: Int = 0 // в мілілітрах
 )

@@ -28,6 +28,12 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     
+    // Validation
+    val isNameValid = remember(name) { name.isNotBlank() }
+    val isEmailValid = remember(email) { android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() }
+    val isPasswordValid = remember(password) { password.length >= 8 }
+    val isFormValid = isNameValid && isEmailValid && isPasswordValid
+    
     val authState by viewModel.authState.collectAsState()
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -85,8 +91,17 @@ fun RegisterScreen(
                 focusedBorderColor = OrangePrimary,
                 focusedLabelColor = OrangePrimary,
                 cursorColor = OrangePrimary
-            )
+            ),
+            isError = name.isNotEmpty() && !isNameValid
         )
+        if (name.isNotEmpty() && !isNameValid) {
+             Text(
+                text = "Ім'я не може бути порожнім",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -101,8 +116,17 @@ fun RegisterScreen(
                 focusedLabelColor = OrangePrimary,
                 cursorColor = OrangePrimary
             ),
-            isError = errorMessage != null
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Email),
+            isError = (errorMessage != null) || (email.isNotEmpty() && !isEmailValid)
         )
+        if (email.isNotEmpty() && !isEmailValid) {
+             Text(
+                text = "Невірний формат пошти",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -118,8 +142,16 @@ fun RegisterScreen(
                 focusedLabelColor = OrangePrimary,
                 cursorColor = OrangePrimary
             ),
-             isError = errorMessage != null
+             isError = (errorMessage != null) || (password.isNotEmpty() && !isPasswordValid)
         )
+        if (password.isNotEmpty() && !isPasswordValid) {
+             Text(
+                text = "Пароль має бути не менше 8 символів",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
         
         if (errorMessage != null) {
              Text(
@@ -139,10 +171,10 @@ fun RegisterScreen(
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = OrangePrimary,
+                containerColor = if (isFormValid) OrangePrimary else Color.Gray,
                 contentColor = Color.White // Force white text
             ),
-            enabled = authState != AuthState.Loading
+            enabled = authState != AuthState.Loading && isFormValid
         ) {
             if (authState == AuthState.Loading) {
                  CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))

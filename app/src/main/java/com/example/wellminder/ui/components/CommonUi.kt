@@ -29,7 +29,7 @@ fun TopBarSection() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // App Logo
+            // Логотип застосунку
             androidx.compose.foundation.Image(
                 painter = androidx.compose.ui.res.painterResource(id = com.example.wellminder.R.drawable.logo),
                 contentDescription = "App Logo",
@@ -49,8 +49,8 @@ fun TopBarSection() {
             )
         }
         
-        // Profile or Camera cutout area
-        // Assuming just a simple profile icon for now
+        // Область профілю або вирізу камери
+        // Припускаємо просто іконку профілю поки що
     }
 }
 
@@ -65,7 +65,7 @@ enum class MealType(val title: String, val timeRange: String) {
 fun ReusableFoodSection(
     selectedMeal: MealType,
     onMealSelect: (MealType) -> Unit,
-    // Content for the ACTIVE tab (the one that is selected)
+    // Вміст для АКТИВНОЇ вкладки (яку вибрано)
     activeTabContent: @Composable (MealType) -> Unit,
     footerContent: (@Composable () -> Unit)? = null
 ) {
@@ -95,7 +95,7 @@ fun ReusableFoodSection(
                     }
                 }
             }
-            // Footer
+            // Підвал
             if (footerContent != null) {
                 HorizontalDivider(
                      color = Color(0xFFEEEEEE),
@@ -123,7 +123,7 @@ fun ReusableMealTabItem(
     val backgroundColor = if (isSelected) Color(0xFFFF8A00) else Color.White
     val contentColor = if (isSelected) Color.White else Color.Black
     
-    // We strictly use the size/padding from the "FoodScreen" analysis to ensure identical size
+    // Ми суворо використовуємо розмір/відступ з аналізу "FoodScreen", щоб забезпечити ідентичний розмір
     Column(
         modifier = modifier
             .fillMaxHeight()
@@ -133,7 +133,7 @@ fun ReusableMealTabItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Title
+        // Заголовок
         Text(
             text = meal.title,
             style = com.example.wellminder.ui.theme.Typography.bodyMedium.copy(
@@ -147,7 +147,7 @@ fun ReusableMealTabItem(
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        // Time
+        // Час
         Text(
             text = meal.timeRange,
             style = com.example.wellminder.ui.theme.Typography.labelSmall,
@@ -160,7 +160,7 @@ fun ReusableMealTabItem(
         if (isSelected) {
             activeContent()
         } else {
-             // Fixed height spacer to maintain height when inactive, matching the active state rough height
+             // Роздільник фіксованої висоти для збереження висоти в неактивному стані
              Spacer(modifier = Modifier.height(80.dp))
         }
     }
@@ -197,7 +197,7 @@ fun BottomNavigationBar(
             alwaysShowLabel = false,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFFFF8A00),
-                selectedTextColor = Color(0xFFFF8A00), // Added highlighted color for consistency
+                selectedTextColor = Color(0xFFFF8A00), // Додано колір виділення для узгодженості
                 indicatorColor = Color.White,
                 unselectedIconColor = Color.Black
             )
@@ -241,11 +241,11 @@ fun PremiumCheckButton(
         modifier = modifier
             .size(72.dp)
             .shadow(4.dp, CircleShape)
-            .background(Color(0xFF2E8B15), CircleShape) // Darker Green Base
+            .background(Color(0xFF2E8B15), CircleShape) // Темно-зелена основа
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        // Inner Polygon (Lighter Green)
+        // Внутрішній багатокутник (Світліший зелений)
         Canvas(modifier = Modifier.size(40.dp)) {
             val path = androidx.compose.ui.graphics.Path().apply {
                 val w = size.width
@@ -254,7 +254,7 @@ fun PremiumCheckButton(
                 val cy = h / 2
                 val r = w / 2
                 
-                // Octagon points
+                // Точки восьмикутника
                 moveTo(cx + r, cy) // 0
                 lineTo(cx + r * 0.7f, cy + r * 0.7f) // 45
                 lineTo(cx, cy + r) // 90
@@ -268,7 +268,7 @@ fun PremiumCheckButton(
             drawPath(path, Color(0xFF43A047)) // Lighter Green
         }
         
-        // Icon
+        // Іконка
         Icon(
             imageVector = Icons.Default.Check,
             contentDescription = "Done",

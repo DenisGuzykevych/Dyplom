@@ -1,10 +1,9 @@
 package com.example.wellminder.data.repository
 
 import com.example.wellminder.data.local.dao.FoodDao
-import com.example.wellminder.data.local.entities.FoodCategoryEntity
 import com.example.wellminder.data.local.entities.FoodEntity
 import com.example.wellminder.data.local.entities.FoodNutrientEntity
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
+import com.example.wellminder.data.local.entities.FoodWithNutrients
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -13,7 +12,7 @@ class FoodRepository @Inject constructor(
     private val consumedFoodDao: com.example.wellminder.data.local.dao.ConsumedFoodDao,
     private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager
 ) {
-    fun getAllFood(): Flow<List<FoodWithNutrientsAndCategory>> {
+    fun getAllFood(): Flow<List<FoodWithNutrients>> {
         return foodDao.getAllFoodWithDetails()
     }
 
@@ -34,35 +33,26 @@ class FoodRepository @Inject constructor(
 
     suspend fun saveFood(
         name: String,
-        calories: Int,
         proteins: Float,
         fats: Float,
         carbs: Float,
-        categoryName: String? = null
+        calories: Int
     ) {
-        // 1. Create or Get Category (Simplified: just create for now, or null)
-        val categoryId = if (categoryName != null) {
-            foodDao.insertCategory(FoodCategoryEntity(name = categoryName))
-        } else {
-            null
-        }
-
-        // 2. Insert Food
+        // 1. Спочатку створюємо сам продукт (без категорії)
         val foodId = foodDao.insertFood(
             FoodEntity(
-                name = name,
-                categoryId = categoryId
+                name = name
             )
         )
 
-        // 3. Insert Nutrients
+        // 2. Тепер додаємо його БЖВ
         foodDao.insertNutrients(
             FoodNutrientEntity(
                 foodId = foodId,
-                calories = calories,
                 proteins = proteins,
                 fats = fats,
-                carbohydrates = carbs
+                carbohydrates = carbs,
+                calories = calories
             )
         )
     }
@@ -71,20 +61,19 @@ class FoodRepository @Inject constructor(
         foodId: Long,
         nutrientId: Long,
         name: String,
-        calories: Int,
         proteins: Float,
         fats: Float,
         carbs: Float,
-        categoryId: Long?
+        calories: Int
     ) {
-        val food = FoodEntity(foodId = foodId, name = name, categoryId = categoryId)
+        val food = FoodEntity(foodId = foodId, name = name)
         val nutrients = FoodNutrientEntity(
             nutrientId = nutrientId,
             foodId = foodId,
-            calories = calories,
             proteins = proteins,
             fats = fats,
-            carbohydrates = carbs
+            carbohydrates = carbs,
+            calories = calories
         )
         foodDao.updateFoodWithDetails(food, nutrients)
     }
@@ -96,7 +85,7 @@ class FoodRepository @Inject constructor(
 
     suspend fun logConsumedFood(foodId: Long, grams: Int, mealType: String) {
         val userId = preferenceManager.userId
-        if (userId == -1L) return // Or throw error
+        if (userId == -1L) return // Або можна кинути помилку
 
         consumedFoodDao.insert(
             com.example.wellminder.data.local.entities.ConsumedFoodEntity(
@@ -115,7 +104,7 @@ class FoodRepository @Inject constructor(
         consumedFoodDao.update(
             com.example.wellminder.data.local.entities.ConsumedFoodEntity(
                 id = id,
-                userId = userId, // Ensure we don't accidentally switch user ownership
+                userId = userId, // Переконуємось, що не міняємо власника запису випадково
                 foodId = foodId,
                 grams = grams,
                 mealType = mealType,
@@ -126,13 +115,13 @@ class FoodRepository @Inject constructor(
 
     suspend fun deleteConsumedFood(id: Long) {
         val userId = preferenceManager.userId
-        // We can't easily validate ownership without fetching first, 
-        // but let's assume UI only shows valid items.
-        // We still need to pass a valid object structure for Room @Delete
+        // Важко перевірити власника без зайвого запиту, 
+        // але вважаємо, що UI показує тільки дозволене.
+        // Для Room @Delete треба передати об'єкт з правильним PK
         consumedFoodDao.delete(
             com.example.wellminder.data.local.entities.ConsumedFoodEntity(
                 id = id,
-                userId = userId, // Ideally irrelevant for delete by PK but good for completeness
+                userId = userId, // Це поле не важливе для видалення по ID, але хай буде для порядку
                 foodId = 0, 
                 grams = 0,   
                 mealType = "" 

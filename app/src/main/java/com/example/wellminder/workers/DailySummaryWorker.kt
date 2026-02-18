@@ -31,9 +31,9 @@ class DailySummaryWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         return try {
             val userIds = userDao.getAllUserIds()
-            // Reset logic: Process data for "Yesterday" as the worker runs daily to finalize it.
-            // The user views "Today" which starts empty (implicitly reset).
-            // We save "Yesterday" to history.
+            // Логіка скидання: Обробляємо дані за "Вчора", оскільки воркер запускається щодня для фіналізації.
+            // Користувач бачить "Сьогодні", яке починається порожнім (скидання за замовчуванням).
+            // Ми зберігаємо "Вчора" в історію.
             val yesterday = LocalDate.now().minusDays(1)
             val dateStr = yesterday.toString()
 
@@ -41,7 +41,7 @@ class DailySummaryWorker @AssistedInject constructor(
             val startOfDay = yesterday.atStartOfDay(zoneId).toInstant()
             val endOfDay = yesterday.plusDays(1).atStartOfDay(zoneId).toInstant()
 
-            // Pre-fetch HC steps for yesterday (same for all users on device usually)
+            // Попередня вибірка кроків з Health Connect за вчора (зазвичай однаково для всіх користувачів на пристрої)
             var hcSteps = 0
             if (healthConnectManager.checkAvailability() == androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE &&
                 healthConnectManager.hasAllPermissions()) {
@@ -49,56 +49,18 @@ class DailySummaryWorker @AssistedInject constructor(
             }
 
             userIds.forEach { userId ->
-                // Check if already processed
+                // Перевіряємо, чи дані вже оброблені
                 if (dailySummaryDao.getSummary(dateStr, userId) == null) {
                     
-                    // 1. Manual Steps
-                    val manualSteps = dailyStepsDao.getStepsOneShot(dateStr, userId)?.manualStepCount ?: 0
-                    val totalSteps = hcSteps + manualSteps
-
-                    // 2. Water
-                    val water = waterDao.getWaterIntakeOneShot(dateStr, userId)?.intakeAmount ?: 0
-
-                    // 3. Food (Calories & Macros)
-                    val foodLogs = consumedFoodDao.getConsumedFoodForDateOneShot(
-                        userId, 
-                        startOfDay.toEpochMilli(), 
-                        endOfDay.toEpochMilli() - 1
-                    )
-                    
-                    var cals = 0
-                    var prot = 0f
-                    var fats = 0f
-                    var carbs = 0f
-
-                    foodLogs.forEach { detail ->
-                        val ratio = detail.consumed.grams / 100f
-                        cals += ((detail.nutrients?.calories ?: 0) * ratio).toInt()
-                        prot += (detail.nutrients?.proteins ?: 0f) * ratio
-                        fats += (detail.nutrients?.fats ?: 0f) * ratio
-                        carbs += (detail.nutrients?.carbohydrates ?: 0f) * ratio
-                    }
-
-                    // 4. Weight (Snapshot: Last known weight on or before end of yesterday)
-                    // We fetch logs from beginning of time up to end of yesterday
-                    // Ideally we should limit or use a specific query, but getWeightLogs returns list.
-                    // Let's use existing getWeightLogs(userId, 0) and filter in memory for now or assume efficient enough.
-                    // Optimization: Add getLatestWeight(userId, beforeTimestamp) to DAO later.
-                    // For now:
+                    // 2. Вага (Зріз: Остання відома вага на момент кінця вчорашнього дня або раніше)
                     val weightLogs = userDao.getWeightLogs(userId, 0)
                     val lastWeightLog = weightLogs.filter { it.date < endOfDay.toEpochMilli() }.maxByOrNull { it.date }
                     val weight = lastWeightLog?.weightValue ?: userDao.getUserProfile(userId)?.currentWeight ?: 0f
 
-                    // 5. Save Summary
+                    // 5. Збереження підсумку (3NF: Тільки зріз ваги)
                     val summary = DailySummaryEntity(
                         date = dateStr,
                         userId = userId,
-                        totalSteps = totalSteps,
-                        waterIntake = water,
-                        caloriesConsumed = cals,
-                        proteins = prot,
-                        fats = fats,
-                        carbs = carbs,
                         weight = weight
                     )
                     dailySummaryDao.insertSummary(summary)

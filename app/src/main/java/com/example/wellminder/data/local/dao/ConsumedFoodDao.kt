@@ -32,7 +32,7 @@ interface ConsumedFoodDao {
     @Delete
     suspend fun delete(consumedFood: ConsumedFoodEntity)
 
-    // specific date range for a user
+    // Витягуємо їжу за конкретний діапазон дат
     @Transaction
     @Query("SELECT * FROM consumed_food WHERE userId = :userId AND timestamp BETWEEN :startOfDay AND :endOfDay ORDER BY timestamp DESC")
     fun getConsumedFoodForDate(userId: Long, startOfDay: Long, endOfDay: Long): Flow<List<ConsumedFoodDetail>>
@@ -41,7 +41,7 @@ interface ConsumedFoodDao {
     @Query("SELECT * FROM consumed_food WHERE userId = :userId AND timestamp BETWEEN :startOfDay AND :endOfDay ORDER BY timestamp DESC")
     suspend fun getConsumedFoodForDateOneShot(userId: Long, startOfDay: Long, endOfDay: Long): List<ConsumedFoodDetail>
 
-    // all history for a user
+    // Взагалі вся історія, що юзер коли-небудь їв
     @Transaction
     @Query("SELECT * FROM consumed_food WHERE userId = :userId ORDER BY timestamp DESC")
     fun getAllConsumedFood(userId: Long): Flow<List<ConsumedFoodDetail>>

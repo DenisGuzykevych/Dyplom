@@ -63,7 +63,11 @@ fun UpdateWeightDialog(
                     // Input Field
                     BasicTextField(
                         value = weight,
-                        onValueChange = { weight = it },
+                        onValueChange = { input ->
+                             if (input.count { it == '.' } <= 1 && input.replace(".", "").all { it.isDigit() }) {
+                                 weight = input
+                             }
+                        },
                         textStyle = Typography.bodyLarge.copy(color = Color.Black),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
@@ -102,7 +106,10 @@ fun UpdateWeightDialog(
                     // Orange Save Button
                     Button(
                         onClick = { onSave(weight) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (weight.toFloatOrNull() != null) Color(0xFFFF8A00) else Color.Gray
+                        ),
+                        enabled = weight.toFloatOrNull() != null,
                         shape = RoundedCornerShape(32.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.8f)

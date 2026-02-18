@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.example.wellminder.ui.theme.Typography
 import androidx.hilt.navigation.compose.hiltViewModel
 
-// Step Enum
+// Перелік кроків
 enum class ChangeGoalStep {
     GOAL_SELECTION,
     USER_DETAILS
@@ -32,27 +32,27 @@ fun ChangeGoalsScreen(
 ) {
     var currentStep by remember { mutableStateOf(ChangeGoalStep.GOAL_SELECTION) }
     
-    // Load initial data
+    // Завантаження початкових даних
     val currentProfile = viewModel.userProfile
     val currentGoals = viewModel.userGoals
     
-    // State for Goal
-    // Assuming "MAINTAIN" is default if null
+    // Стан для цілі
+    // "MAINTAIN" за замовчуванням, якщо null
     var selectedGoal by remember { 
         mutableStateOf(currentGoals?.goalType ?: "MAINTAIN") 
     }
     
-    // State for Stats
-    // Convert currentWeight (Float) to String. Drop decimal if .0
+    // Стан для статистики
+    // Конвертуємо currentWeight (Float) у String. Відкидаємо нуль, якщо ціле.
     var weight by remember { 
         mutableStateOf(currentProfile?.currentWeight?.let { if(it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "") 
     }
     var height by remember { 
         mutableStateOf(currentProfile?.height?.toString() ?: "") 
     }
-    // Calculate Age if not available, or use Prefs age? 
-    // ProfileViewModel logic uses estimatedDOB. Let's try to reverse it or just use a derived value.
-    // For now, let's keep it empty if we can't easily calc, or calc from DOB.
+    // Розрахунок віку, якщо немає
+    // Логіка ProfileViewModel використовує estimatedDOB.
+    // Поки що залишимо порожнім, якщо важко порахувати або беремо з DOB.
     val calculatedAge = remember(currentProfile?.dateOfBirth) {
         if (currentProfile?.dateOfBirth != null && currentProfile.dateOfBirth > 0) {
             val birthDate = java.time.Instant.ofEpochMilli(currentProfile.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
@@ -72,7 +72,7 @@ fun ChangeGoalsScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Header (Step Counter)
+        // Заголовок (Лічильник кроків)
         Text(
             text = "Крок ${if (currentStep == ChangeGoalStep.GOAL_SELECTION) "1" else "2"} з 2",
             style = Typography.bodyLarge,
@@ -82,7 +82,7 @@ fun ChangeGoalsScreen(
 
         Spacer(modifier = Modifier.height(60.dp))
 
-        // Content based on step
+        // Вміст залежно від кроку
         when (currentStep) {
             ChangeGoalStep.GOAL_SELECTION -> {
                 GoalSelectionStep(
@@ -100,7 +100,7 @@ fun ChangeGoalsScreen(
                     age = age,
                     onAgeChange = { age = it },
                     onFinish = {
-                        // Validate and Save
+                        // Валідація та збереження
                         if (weight.isNotEmpty() && height.isNotEmpty() && age.isNotEmpty()) {
                             viewModel.saveGoalsAndStats(
                                 goal = selectedGoal,
@@ -110,7 +110,11 @@ fun ChangeGoalsScreen(
                             )
                             onFinish()
                         }
-                    }
+                    },
+                    isValid = weight.isNotEmpty() && height.isNotEmpty() && age.isNotEmpty()
+                             && weight.all { it.isDigit() || it == '.' } 
+                             && height.all { it.isDigit() } 
+                             && age.all { it.isDigit() }
                 )
             }
         }
@@ -134,7 +138,7 @@ fun GoalSelectionStep(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Radio Buttons
+        // Радіокнопки
         GoalRadioButton(
             text = "Схуднути",
             selected = selectedGoal == "LOSE",
@@ -182,7 +186,9 @@ fun UserDetailsStep(
     onHeightChange: (String) -> Unit,
     age: String,
     onAgeChange: (String) -> Unit,
-    onFinish: () -> Unit
+
+    onFinish: () -> Unit,
+    isValid: Boolean
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -198,7 +204,7 @@ fun UserDetailsStep(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Inputs
+        // Поля введення
         CustomInput(label = "Вага", placeholder = "кг", value = weight, onValueChange = onWeightChange)
         Spacer(modifier = Modifier.height(16.dp))
         CustomInput(label = "Зріст", placeholder = "см", value = height, onValueChange = onHeightChange)
@@ -210,9 +216,10 @@ fun UserDetailsStep(
         Button(
             onClick = onFinish,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF8A00),
+                containerColor = if (isValid) Color(0xFFFF8A00) else Color.Gray,
                 contentColor = Color.White
             ),
+            enabled = isValid,
             shape = RoundedCornerShape(32.dp),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
@@ -241,7 +248,7 @@ fun GoalRadioButton(
             .padding(vertical = 8.dp, horizontal = 32.dp)
             .clickable(onClick = onClick)
     ) {
-        // Custom Radio Circle
+        // Кастомне коло радіокнопки
         Box(
             modifier = Modifier
                 .size(24.dp)
@@ -289,7 +296,16 @@ fun CustomInput(
 
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { input ->
+                // Дозволяємо цифри та максимум одну крапку (якщо weight). Для height/age - тільки цифри.
+                // Будемо універсальними: passed Validation? 
+                // CustomInput універсальний...
+                // Для простоти, як вимагалося "where numbers needed - only numbers":
+                // зміна onValueChange в caller краще, але тут можемо гарантувати структуру числа
+                if (input.count { it == '.' } <= 1 && input.replace(".", "").all { it.isDigit() }) {
+                    onValueChange(input)
+                }
+            },
             placeholder = { Text(placeholder, color = Color.Gray) },
             textStyle = Typography.bodyLarge.copy(color = Color.Black),
             singleLine = true,

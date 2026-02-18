@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
 data class WeightLogEntity(
     @PrimaryKey(autoGenerate = true)
     val logId: Long = 0,
-    val userId: Long, // FK
-    val date: Long, // Timestamp of entry
+    val userId: Long, // Чий запис
+    val date: Long, // Коли зважувався
     val weightValue: Float
 )

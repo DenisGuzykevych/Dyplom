@@ -52,7 +52,7 @@ class HomeViewModel @Inject constructor(
     var consumedCarbs by mutableFloatStateOf(0f)
         private set
 
-    var targetCalories by mutableIntStateOf(2000) // Default
+    var targetCalories by mutableIntStateOf(2000) // За замовчуванням
         private set
     var targetProteins by mutableFloatStateOf(100f)
         private set
@@ -81,10 +81,15 @@ class HomeViewModel @Inject constructor(
                  
                  logs.forEach { item ->
                      val ratio = item.consumed.grams / 100f
-                     cals += ((item.nutrients?.calories ?: 0) * ratio).toInt()
-                     prot += (item.nutrients?.proteins ?: 0f) * ratio
-                     fats += (item.nutrients?.fats ?: 0f) * ratio
-                     carbs += (item.nutrients?.carbohydrates ?: 0f) * ratio
+                     val p = (item.nutrients?.proteins ?: 0f) * ratio
+                     val f = (item.nutrients?.fats ?: 0f) * ratio
+                     val c = (item.nutrients?.carbohydrates ?: 0f) * ratio
+                     
+                     // Рахуємо калорії динамічно (по 3NF)
+                     cals += com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
+                     prot += p
+                     fats += f
+                     carbs += c
                  }
                  
                  consumedCalories = cals
@@ -97,13 +102,13 @@ class HomeViewModel @Inject constructor(
 
 
     
-    // Expose these for UI
+    // Відкриваємо ці поля для UI
     var stepTarget by mutableIntStateOf(10000)
         private set
     var waterTarget by mutableIntStateOf(2000)
         private set
 
-    // Update loadWaterAndStats to set these
+    // Ця функція оновить ці значення
     private fun loadWaterAndStats(id: Long) {
         viewModelScope.launch {
             if (id != -1L) {
@@ -120,15 +125,20 @@ class HomeViewModel @Inject constructor(
                 val stride = (height * 0.415) / 100.0
                 stepsPerKm = (1000 / stride).toInt()
                 
-                // Load Goals (Observe for changes)
+                // Підвантажуємо цілі (стежимо за змінами)
                 userDao.getUserGoalsFlow(id).collect { goals ->
                     if (goals != null) {
-                        targetCalories = goals.targetCalories
-                        stepTarget = goals.targetSteps
-                        waterTarget = goals.targetWaterMl
                         targetProteins = goals.targetProteins
                         targetFats = goals.targetFats
                         targetCarbs = goals.targetCarbs
+                        
+                        // Рахуємо цільові калорії динамічно (3NF)
+                        targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                            targetProteins, targetFats, targetCarbs
+                        )
+                        
+                        stepTarget = goals.targetSteps
+                        waterTarget = goals.targetWaterMl
                     }
                 }
             }
@@ -140,7 +150,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             if (userId == -1L) return@launch
             
-            // Fetch Health Connect total (Sensor Data) + Local Manual Steps
+            // Беремо кроки з Health Connect (сенсори) + Локальні (ручні)
             val manualSteps = statsRepository.getManualStepsOneShot(LocalDate.now(), userId)
             
             var sensorSteps = 0
@@ -153,7 +163,7 @@ class HomeViewModel @Inject constructor(
                     val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
                     val startOfDay = today.atStartOfDay(ZoneId.systemDefault()).toInstant()
                     
-                    // Use the later of startOfDay or syncStartTime to prevent leakage from previous users/times
+                    // Використовуємо пізніший час (startOfDay або syncStartTime), щоб не чіпляти чужі дані
                     val effectiveStartTime = if (syncStartTime != null && syncStartTime.isAfter(startOfDay)) {
                         syncStartTime
                     } else {
@@ -171,7 +181,7 @@ class HomeViewModel @Inject constructor(
                     
                     android.util.Log.d("HomeViewModel", "fetchSteps: HC(Sensor)=$sensorSteps, Local(Manual)=$manualSteps")
                     
-                    // DEBUG: Log breakdown
+                    // DEBUG: Детальний лог
                     healthConnectManager.debugLogAllStepsForToday(today)
                 }
             }
@@ -201,7 +211,7 @@ class HomeViewModel @Inject constructor(
     suspend fun convertKmToSteps(km: Double): Int {
          if (userId == -1L) return 0
         val heightCm = statsRepository.getUserHeight(userId)
-        // Average stride length estimation: Height * 0.415
+        // Середня довжина кроку: Зріст * 0.415
         val strideLengthMeters = (heightCm * 0.415) / 100.0
         val steps = (km * 1000 / strideLengthMeters).toInt()
         android.util.Log.d("HomeViewModel", "Converting $km km to steps. Height=$heightCm, Stride=$strideLengthMeters, Steps=$steps")

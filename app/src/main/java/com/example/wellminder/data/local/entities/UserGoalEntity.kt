@@ -18,13 +18,12 @@ import androidx.room.PrimaryKey
 data class UserGoalEntity(
     @PrimaryKey(autoGenerate = true)
     val goalId: Long = 0,
-    val userId: Long, // FK
+    val userId: Long, // Чиї це цілі
     val targetWeight: Float,
     val targetWaterMl: Int,
     val targetSteps: Int,
-    val targetCalories: Int,
     val targetProteins: Float = 0f,
     val targetFats: Float = 0f,
     val targetCarbs: Float = 0f,
-    val goalType: String = "MAINTAIN" // "LOSE", "MAINTAIN", "GAIN"
+    val goalType: String = "MAINTAIN" // "LOSE" (Схуднути), "MAINTAIN" (Тримати), "GAIN" (Набрати)
 )

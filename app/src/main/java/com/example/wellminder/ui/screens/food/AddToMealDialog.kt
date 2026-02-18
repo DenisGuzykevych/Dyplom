@@ -18,12 +18,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
+import com.example.wellminder.data.local.entities.FoodWithNutrients
 import com.example.wellminder.ui.theme.Typography
 
 @Composable
 fun AddToMealDialog(
-    item: FoodWithNutrientsAndCategory,
+    item: FoodWithNutrients,
     mealType: String,
     onDismiss: () -> Unit,
     onAdd: (Int) -> Unit
@@ -60,7 +60,9 @@ fun AddToMealDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BasicTextField(
                         value = grams,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) grams = it },
+                        onValueChange = { input ->
+                             if (input.all { it.isDigit() }) grams = input 
+                        },
                         textStyle = Typography.headlineMedium.copy(
                             textAlign = TextAlign.Center,
                             fontWeight = FontWeight.Bold,
@@ -81,7 +83,10 @@ fun AddToMealDialog(
                 // Calculated Info
                 val g = grams.toIntOrNull() ?: 0
                 val ratio = g / 100f
-                val cals = ((item.nutrients?.calories ?: 0) * ratio).toInt()
+                val p = (item.nutrients?.proteins ?: 0f) * ratio
+                val f = (item.nutrients?.fats ?: 0f) * ratio
+                val c = (item.nutrients?.carbohydrates ?: 0f) * ratio
+                val cals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
                 
                 Text(
                     text = "$cals ккал",
@@ -97,8 +102,11 @@ fun AddToMealDialog(
                             onAdd(finalGrams)
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (grams.toIntOrNull() ?: 0 > 0) Color(0xFFFF8A00) else Color.Gray
+                    ),
                     shape = RoundedCornerShape(12.dp),
+                    enabled = (grams.toIntOrNull() ?: 0) > 0,
                     modifier = Modifier.fillMaxWidth().height(48.dp)
                 ) {
                     Text("Додати", color = Color.White, fontWeight = FontWeight.Bold)

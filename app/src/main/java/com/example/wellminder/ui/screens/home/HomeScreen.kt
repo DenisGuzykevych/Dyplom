@@ -97,12 +97,12 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Top Bar with Logo and Profile
+            // Верхня панель з логотипом та профілем
             TopBarSection()
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Norm Cards
+            // Картки нормативів
             NormCard(
                 title = "Норма води",
                 icon = Icons.Rounded.WaterDrop,
@@ -120,7 +120,7 @@ fun HomeScreen(
                 icon = Icons.Rounded.Bolt,
                 iconColor = Color(0xFFFFC107),
                 progress = if (targetCalories > 0) consumedCalories.toFloat() / targetCalories.toFloat() else 0f,
-                progressColor = Color(0xFF4CAF50), // Green for calories
+                progressColor = Color(0xFF4CAF50), // Зелений для калорій
                 subtitle = "Спожито ${consumedCalories}ккал\nз ${targetCalories}ккал",
                 onClick = { showCaloriesOverlay = true }
             )
@@ -139,8 +139,7 @@ fun HomeScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Food Section
-            // Food Section
+            // Секція їжі
             var selectedMealForAdd by remember { mutableStateOf<com.example.wellminder.ui.components.MealType?>(null) }
             
             FoodSection(
@@ -230,7 +229,7 @@ fun NormCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Circular Progress
+            // Прогрес у колі
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(70.dp)
@@ -245,7 +244,7 @@ fun NormCard(
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Text Content
+            // Текстовий вміст
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = title, style = Typography.titleMedium, fontSize = 20.sp)
@@ -278,7 +277,7 @@ fun CircularProgress(
     strokeWidth: Dp
 ) {
     Canvas(modifier = Modifier.size(size)) {
-        // Background track
+        // Фонова доріжка
         drawArc(
             color = Color(0xFFE0E0E0),
             startAngle = 0f,
@@ -313,11 +312,11 @@ fun FoodSection(
             }
         },
         activeTabContent = { meal ->
-            // Specific content for Home Screen (Plus Button)
+            // Специфічний вміст для головного екрана (Кнопка "Плюс")
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier.size(48.dp)
-                        // .clickable { onAddFood() } // Removed: Handled by parent container
+                        // .clickable { onAddFood() } // Видалено: Оброблено батьківським контейнером
                         .background(Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {

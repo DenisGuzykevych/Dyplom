@@ -25,7 +25,7 @@ class AuthRepository @Inject constructor(
         return try {
             val user = UserEntity(email = email, passwordHash = passwordHash, isGuest = false)
             val profile = UserProfileEntity(
-                userId = 0, // Set in Trigger/Transaction
+                userId = 0, // Встановиться автоматично в транзакції
                 name = name,
                 gender = gender,
                 height = height,
@@ -34,10 +34,9 @@ class AuthRepository @Inject constructor(
             )
             val goals = UserGoalEntity(
                 userId = 0,
-                targetWeight = weight, // Default target = current
+                targetWeight = weight, // За замовчуванням ціль = поточна вага
                 targetWaterMl = 2000,
-                targetSteps = 6000,
-                targetCalories = 2000
+                targetSteps = 6000
             )
             val userId = userDao.registerUser(user, profile, goals)
             preferenceManager.userId = userId
@@ -45,8 +44,8 @@ class AuthRepository @Inject constructor(
             preferenceManager.gender = gender
             preferenceManager.weight = weight
             preferenceManager.height = height.toFloat()
-            // Approximate age? Or just save DOB? Prefs has AGE (int).
-            // Calculate age
+            // Рахуємо вік приблизно, бо в налаштуваннях зберігаємо тільки число
+            // Обчислюємо вік
            val age = java.time.Period.between(
                 java.time.Instant.ofEpochMilli(birthDate).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
                 java.time.LocalDate.now()
@@ -75,8 +74,7 @@ class AuthRepository @Inject constructor(
                 userId = 0,
                 targetWeight = weight, 
                 targetWaterMl = 2000,
-                targetSteps = 6000,
-                targetCalories = 2000
+                targetSteps = 6000
             )
             val userId = userDao.registerUser(user, profile, goals)
             preferenceManager.userId = userId
@@ -98,7 +96,7 @@ class AuthRepository @Inject constructor(
         val user = userDao.getUserByEmail(email)
         return if (user != null && user.passwordHash == passwordHash) {
             preferenceManager.userId = user.userId
-            // Also fetch profile and update prefs? Optional but good for consistency
+            // Підтягнемо профіль, щоб оновити локальні налаштування (для надійності)
              val profile = userDao.getUserProfile(user.userId)
              if (profile != null) {
                  preferenceManager.userName = profile.name
@@ -110,7 +108,7 @@ class AuthRepository @Inject constructor(
                         java.time.LocalDate.now()
                     ).years
                 preferenceManager.age = age
-                preferenceManager.isOnboardingComplete = true // User has profile, skip onboarding
+                preferenceManager.isOnboardingComplete = true // Профіль є, тому онбордінг пропускаємо
              }
             user
         } else {

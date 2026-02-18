@@ -80,7 +80,7 @@ fun ProfileScreen(
         EditAccountDataScreen(
             onSave = {
                 showEditAccountData = false
-                showAccountInfo = false // Return to main profile
+                showAccountInfo = false // Повернення до основного профілю
                 android.widget.Toast.makeText(context, "Ваші дані змінені", android.widget.Toast.LENGTH_SHORT).show()
             },
             viewModel = viewModel
@@ -177,7 +177,7 @@ fun ProfileScreen(
                         else -> "Підтримувати форму"
                     }
                     UserInfoRow("Мета:", goalText)
-                    // Calculate age from birthDate
+                    // Обчислюємо вік за датою народження
                     val age = if (viewModel.userProfile?.dateOfBirth != null && viewModel.userProfile!!.dateOfBirth > 0) {
                          val birthDate = java.time.Instant.ofEpochMilli(viewModel.userProfile!!.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
                          val now = java.time.LocalDate.now()
@@ -191,7 +191,7 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Action Buttons
+            // Кнопки дій
             ProfileActionButton(
                 text = "Дані про акаунт",
                 icon = Icons.Default.Email,
@@ -225,7 +225,7 @@ fun ProfileScreen(
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(44.dp) // Container size
+                            .size(44.dp) // Розмір контейнера
                             .clip(CircleShape)
                             .background(Color.White)
                     ) {
@@ -233,7 +233,7 @@ fun ProfileScreen(
                             painter = androidx.compose.ui.res.painterResource(id = com.example.wellminder.R.drawable.hc),
                             contentDescription = "Health Connect",
                             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                            modifier = Modifier.size(28.dp) // Logo size inside the circle (padding effect)
+                            modifier = Modifier.size(28.dp) // Розмір логотипа всередині кола
                         )
                     }
                     
@@ -252,7 +252,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             
-            // Logout Button
+            // Кнопка виходу
             ProfileActionButton(
                 text = "Вийти з акаунту",
                 icon = Icons.Filled.Close,
@@ -266,7 +266,7 @@ fun ProfileScreen(
                 text = "Видалити акаунт",
                 icon = Icons.Default.Delete,
                 onClick = { showDeleteDialog = true },
-                containerColor = Color(0xFFD32F2F) // Red for delete
+                containerColor = Color(0xFFD32F2F) // Червоний для видалення
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -290,7 +290,7 @@ fun UserInfoRow(label: String, value: String) {
         Text(
             text = value,
             style = Typography.bodyMedium,
-            color = Color.Black // Or maybe a slightly lighter color if needed
+            color = Color.Black // Або трохи світліший колір за потреби
         )
     }
 }
@@ -319,7 +319,7 @@ fun ProfileActionButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.Black, // Icon color black as per screenshot
+                tint = Color.Black, // Колір іконки чорний, згідно з дизайном
                 modifier = Modifier.size(24.dp)
             )
             

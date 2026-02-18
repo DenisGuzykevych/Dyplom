@@ -64,7 +64,10 @@ class StatsViewModel @Inject constructor(
                             if (goals != null) {
                                 waterTarget = goals.targetWaterMl
                                 stepTarget = goals.targetSteps
-                                calorieTarget = goals.targetCalories
+                                // Calculate target calories dynamically (3NF)
+                                calorieTarget = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                                    goals.targetProteins, goals.targetFats, goals.targetCarbs
+                                )
                                 
                                 // Macros are available in goals entity now
                                 val p = goals.targetProteins
@@ -169,7 +172,12 @@ class StatsViewModel @Inject constructor(
                  var cals = 0
                  logs.forEach { item ->
                      val ratio = item.consumed.grams / 100f
-                     cals += ((item.nutrients?.calories ?: 0) * ratio).toInt()
+                     val p = (item.nutrients?.proteins ?: 0f) * ratio
+                     val f = (item.nutrients?.fats ?: 0f) * ratio
+                     val c = (item.nutrients?.carbohydrates ?: 0f) * ratio
+                     
+                     // Dynamic calculation for 3NF
+                     cals += com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
                  }
                  consumedCalories = cals
              }

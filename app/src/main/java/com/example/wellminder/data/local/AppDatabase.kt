@@ -19,12 +19,11 @@ import com.example.wellminder.data.local.entities.WeightLogEntity
         WeightLogEntity::class,
         com.example.wellminder.data.local.entities.DailyStepsEntity::class,
         com.example.wellminder.data.local.entities.WaterIntakeEntity::class,
-        com.example.wellminder.data.local.entities.FoodCategoryEntity::class,
         com.example.wellminder.data.local.entities.FoodNutrientEntity::class,
         com.example.wellminder.data.local.entities.ConsumedFoodEntity::class,
         com.example.wellminder.data.local.entities.DailySummaryEntity::class
     ], 
-    version = 14,
+    version = 17,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

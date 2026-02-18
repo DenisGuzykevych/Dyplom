@@ -17,7 +17,7 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState
 
-    // Temporary storage for modification flow
+    // Тимчасове сховище для флоу реєстрації
     var tempName: String = ""
     var tempGender: String = "Male"
     var tempWeight: Float = 60f
@@ -60,7 +60,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             val success = authRepository.continueAsGuest(
-                name = tempName, // Guests enter name too? Or default? Assuming name input.
+                name = tempName, // Гості теж вводять ім'я? Припускаємо, що так.
                 gender = tempGender,
                 height = tempHeight,
                 weight = tempWeight,

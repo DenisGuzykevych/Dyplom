@@ -15,7 +15,7 @@ class StatsRepository @Inject constructor(
     private val healthConnectManager: HealthConnectManager
 ) {
     suspend fun getUserHeight(userId: Long): Int {
-        return userDao.getUserProfile(userId)?.height ?: 175 // Default 175 cm
+        return userDao.getUserProfile(userId)?.height ?: 175 // За замовчуванням 175 см
     }
 
     fun getManualSteps(date: LocalDate, userId: Long): Flow<Int> {
@@ -32,9 +32,9 @@ class StatsRepository @Inject constructor(
 
         dailyStepsDao.insertOrUpdate(DailyStepsEntity(date.toString(), userId, newCount))
 
-        // Strategy: "Two Variables"
-        // We do NOT write to Health Connect. We only clear our old trash if it exists.
-        // This ensures HC = Sensor Data Only.
+        // Стратегія: "Дві змінні"
+        // Ми НЕ пишемо в Health Connect. Ми тільки чистимо старі дані, якщо вони там є.
+        // Це гарантує, що в HC будуть тільки дані з сенсорів.
         if (healthConnectManager.hasAllPermissions()) {
             healthConnectManager.clearWellMinderSteps(date)
         }

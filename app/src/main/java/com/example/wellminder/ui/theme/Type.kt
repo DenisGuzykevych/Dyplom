@@ -9,7 +9,7 @@ import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.googlefonts.Font
 import com.example.wellminder.R
 
-// Set of Material typography styles to start with
+// Набір стилів типографіки Material за замовчуванням
 val provider = GoogleFont.Provider(
     providerAuthority = "com.google.android.gms.fonts",
     providerPackage = "com.google.android.gms",

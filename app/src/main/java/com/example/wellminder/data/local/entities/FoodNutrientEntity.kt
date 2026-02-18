@@ -19,9 +19,9 @@ import androidx.room.PrimaryKey
 )
 data class FoodNutrientEntity(
     @PrimaryKey(autoGenerate = true) val nutrientId: Long = 0,
-    val foodId: Long, // FK linking to the food item
-    val calories: Int, // kcal per 100g/serving
-    val proteins: Float, // grams
-    val fats: Float, // grams
-    val carbohydrates: Float // grams
+    val foodId: Long, // ID продукту, до якого це відноситься
+    val proteins: Float, // білки (грами)
+    val fats: Float, // жири (грами)
+    val carbohydrates: Float, // вуглеводи (грами)
+    val calories: Int // Калорії (вручну або пораховані)
 )

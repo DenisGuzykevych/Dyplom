@@ -40,7 +40,7 @@ fun AppNavigation(
         composable("login") {
             com.example.wellminder.ui.screens.auth.LoginScreen(
                 onNavigateToHome = {
-                    preferenceManager.isLoggedIn = true // Save login state
+                    preferenceManager.isLoggedIn = true // Зберігаємо стан входу
                     val nextRoute = if (preferenceManager.isOnboardingComplete) "home" else "onboarding_gender"
                     navController.navigate(nextRoute) {
                         popUpTo("login") { inclusive = true }
@@ -55,9 +55,9 @@ fun AppNavigation(
         composable("register") {
             com.example.wellminder.ui.screens.auth.RegisterScreen(
                 onNavigateToHome = {
-                    // After register, also go to onboarding
-                     preferenceManager.isLoggedIn = true // Save login state
-                    val nextRoute = "onboarding_gender" // Always onboarding after register
+                    // Після реєстрації також ідемо на онбординг
+                     preferenceManager.isLoggedIn = true // Зберігаємо стан входу
+                    val nextRoute = "onboarding_gender" // Завжди онбординг після реєстрації
                     navController.navigate(nextRoute) {
                         popUpTo("register") { inclusive = true }
                         popUpTo("login") { inclusive = true }
@@ -95,7 +95,7 @@ fun AppNavigation(
                     preferenceManager.isOnboardingComplete = true
                     
                     navController.navigate("home") {
-                        popUpTo("login") { inclusive = true } // Clear back stack
+                        popUpTo("login") { inclusive = true } // Очищаємо стек переходу назад
                         popUpTo("onboarding_gender") { inclusive = true }
                     }
                 }
@@ -117,7 +117,7 @@ fun AppNavigation(
             FoodScreen(onNavigate = { route ->
                 if (route != "food") {
                     navController.navigate(route) {
-                        popUpTo("home") { saveState = true } // Back to home
+                        popUpTo("home") { saveState = true } // Повернення на головну
                         launchSingleTop = true
                         restoreState = true
                     }
@@ -140,7 +140,7 @@ fun AppNavigation(
             ProfileScreen(onNavigate = { route ->
                 if (route == "login") {
                     navController.navigate("login") {
-                        popUpTo(0) { inclusive = true } // Clear entire back stack
+                        popUpTo(0) { inclusive = true } // Очищаємо весь стек переходів
                     }
                 } else if (route != "profile") {
                     navController.navigate(route) {

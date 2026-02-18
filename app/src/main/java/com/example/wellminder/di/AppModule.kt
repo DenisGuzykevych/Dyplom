@@ -37,7 +37,7 @@ object AppModule {
             com.example.wellminder.data.local.AppDatabase::class.java,
             "wellminder_db"
         )
-        .fallbackToDestructiveMigration() // For dev phase
+        .fallbackToDestructiveMigration() // Для етапу розробки
         .build()
     }
 

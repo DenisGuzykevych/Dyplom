@@ -7,11 +7,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.example.wellminder.data.local.entities.FoodCategoryEntity
+import com.example.wellminder.data.local.entities.FoodWithNutrients
 import com.example.wellminder.data.local.entities.FoodEntity
 import com.example.wellminder.data.local.entities.FoodNutrientEntity
-import com.example.wellminder.data.local.entities.FoodWithNutrientsAndCategory
-
 
 @Dao
 interface FoodDao {
@@ -21,12 +19,9 @@ interface FoodDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNutrients(nutrients: FoodNutrientEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertCategory(category: FoodCategoryEntity): Long
-
     @Transaction
     @Query("SELECT * FROM food")
-    fun getAllFoodWithDetails(): kotlinx.coroutines.flow.Flow<List<FoodWithNutrientsAndCategory>>
+    fun getAllFoodWithDetails(): kotlinx.coroutines.flow.Flow<List<FoodWithNutrients>>
 
     @Update
     suspend fun updateFood(food: FoodEntity)
@@ -43,10 +38,9 @@ interface FoodDao {
         updateNutrients(nutrients)
     }
 
-    @Query("SELECT * FROM food_categories WHERE name = :name LIMIT 1")
-    suspend fun getCategoryByName(name: String): FoodCategoryEntity?
-
     @Query("SELECT * FROM food WHERE name = :name LIMIT 1")
     suspend fun getFoodByName(name: String): FoodEntity?
 }
+
+
 

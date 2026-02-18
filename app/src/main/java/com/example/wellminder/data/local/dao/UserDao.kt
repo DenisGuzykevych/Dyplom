@@ -8,7 +8,7 @@ import com.example.wellminder.data.local.entities.WeightLogEntity
 
 @Dao
 interface UserDao {
-    // Basic Inserts
+    // Базові вставки в таблиці
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertUser(user: UserEntity): Long
 
@@ -27,7 +27,7 @@ interface UserDao {
     @Update
     suspend fun updateGoals(goals: UserGoalEntity)
 
-    // Queries
+    // Запити на отримання даних
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?
 
@@ -55,14 +55,14 @@ interface UserDao {
     @Query("DELETE FROM users WHERE userId = :id")
     suspend fun deleteUserById(id: Long)
 
-    // Compound Transaction for Registration
+    // Реєстрація юзера: пишемо в кілька таблиць одразу (юзер, профіль, цілі)
     @Transaction
     suspend fun registerUser(user: UserEntity, profile: UserProfileEntity, goals: UserGoalEntity): Long {
         val userId = insertUser(user)
-        // Must copy userId to other entities as it's auto-generated
+        // Треба проставити згенерований userId в інші сутності
         insertProfile(profile.copy(userId = userId))
         insertGoals(goals.copy(userId = userId))
-        // Optional: Log initial weight
+        // Можна зразу записати початкову вагу в історію
         insertWeightLog(
             WeightLogEntity(
                 userId = userId,

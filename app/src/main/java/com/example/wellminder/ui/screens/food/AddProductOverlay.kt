@@ -29,14 +29,25 @@ import com.example.wellminder.ui.theme.Typography
 @Composable
 fun AddProductOverlay(
     onDismiss: () -> Unit,
-    onSave: (String, Int, Float, Float, Float) -> Unit
+    onSave: (String, Float, Float, Float, Int) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var portion by remember { mutableStateOf("100") } // Visual only, as per request
-    var calories by remember { mutableStateOf("") }
+    var portion by remember { mutableStateOf("100") } // Visual only
     var proteins by remember { mutableStateOf("") }
     var fats by remember { mutableStateOf("") }
     var carbs by remember { mutableStateOf("") }
+    var calories by remember { mutableStateOf("") }
+    
+    // Auto-calculate calories when macros change
+    LaunchedEffect(proteins, fats, carbs) {
+        val p = proteins.toFloatOrNull() ?: 0f
+        val f = fats.toFloatOrNull() ?: 0f
+        val c = carbs.toFloatOrNull() ?: 0f
+        val calculated = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(p, f, c)
+        if (calculated > 0) {
+            calories = calculated.toString()
+        }
+    }
     
     val context = androidx.compose.ui.platform.LocalContext.current
 
@@ -83,15 +94,15 @@ fun AddProductOverlay(
                             // Save Button
                             Button(
                                 onClick = {
-                                    val calVal = calories.toIntOrNull()
                                     val protVal = proteins.toFloatOrNull() ?: 0f
                                     val fatsVal = fats.toFloatOrNull() ?: 0f
                                     val carbsVal = carbs.toFloatOrNull() ?: 0f
+                                    val calVal = calories.toIntOrNull() ?: 0
                                     
-                                    if (name.isNotEmpty() && calVal != null) {
-                                        onSave(name, calVal, protVal, fatsVal, carbsVal)
+                                    if (name.isNotEmpty()) {
+                                        onSave(name, protVal, fatsVal, carbsVal, calVal)
                                     } else {
-                                        android.widget.Toast.makeText(context, "Вкажіть назву та калорії", android.widget.Toast.LENGTH_SHORT).show()
+                                        android.widget.Toast.makeText(context, "Вкажіть назву", android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00)), // App Orange
@@ -133,7 +144,9 @@ fun AddProductOverlay(
                         label = "Порція (г)",
                         placeholder = "100",
                         value = portion,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) portion = it },
+                        onValueChange = { 
+                            if (it.all { c -> c.isDigit() }) portion = it 
+                        },
                         keyboardType = KeyboardType.Number,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -152,12 +165,16 @@ fun AddProductOverlay(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Calories
+                        // Calories (Editable)
                         CompactLabeledInput(
-                            label = "Ккал *",
+                            label = "Ккал",
                             placeholder = "0",
                             value = calories,
-                            onValueChange = { if (it.all { c -> c.isDigit() }) calories = it },
+                            onValueChange = { input ->
+                                if (input.all { it.isDigit() }) {
+                                    calories = input
+                                }
+                            },
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         )
@@ -166,7 +183,11 @@ fun AddProductOverlay(
                             label = "Білки",
                             placeholder = "0",
                             value = proteins,
-                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) proteins = it },
+                            onValueChange = { input ->
+                                if (input.count { it == '.' } <= 1 && input.replace(".", "").all { it.isDigit() }) {
+                                    proteins = input
+                                }
+                            },
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         )
@@ -175,7 +196,11 @@ fun AddProductOverlay(
                             label = "Жири",
                             placeholder = "0",
                             value = fats,
-                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) fats = it },
+                            onValueChange = { input ->
+                                if (input.count { it == '.' } <= 1 && input.replace(".", "").all { it.isDigit() }) {
+                                    fats = input
+                                }
+                            },
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         )
@@ -184,7 +209,11 @@ fun AddProductOverlay(
                             label = "Вуглев.",
                             placeholder = "0",
                             value = carbs,
-                            onValueChange = { if (it.count { c -> c == '.' } <= 1 && it.replace(".", "").all { c -> c.isDigit() }) carbs = it },
+                            onValueChange = { input ->
+                                if (input.count { it == '.' } <= 1 && input.replace(".", "").all { it.isDigit() }) {
+                                    carbs = input
+                                }
+                            },
                             keyboardType = KeyboardType.Number,
                             modifier = Modifier.weight(1f)
                         )

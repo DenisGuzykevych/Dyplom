@@ -125,7 +125,7 @@ fun StatsScreen(
                         tint = Color.Black,
                         modifier = Modifier
                             .size(32.dp)
-                            .rotate(45f) // Styled like dumbbell
+                            .rotate(45f) // Стилізовано як гантеля
                     )
                     
                     Icon(
@@ -158,7 +158,7 @@ fun StatsScreen(
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
-                    // Bar Chart
+                    // Гістограма
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -167,7 +167,7 @@ fun StatsScreen(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         val weeksData = viewModel.weeklyWeightData
-                        // Find max for scaling
+                        // Знаходимо максимум для масштабування
                         val maxWeight = weeksData.map { it.second }.maxOrNull()?.takeIf { it > 0f } ?: 100f
                         val scaleMax = maxWeight * 1.1f
                         
@@ -205,7 +205,7 @@ fun StatsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Weekly/Daily Stats
+            // Щотижнева/денна статистика
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(32.dp),
@@ -217,7 +217,7 @@ fun StatsScreen(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Date Selector
+                    // Вибір дати
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
@@ -260,7 +260,7 @@ fun StatsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                         // Water
+                         // Вода
                          Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                              StatCircle(
                                  label = "Вода",
@@ -313,9 +313,9 @@ fun StatCircle(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .background(Color(0xFFEFF5FF), RoundedCornerShape(24.dp)) // Light blue bg for item
+            .background(Color(0xFFEFF5FF), RoundedCornerShape(24.dp)) // Світло-блакитний фон елемента
             .padding(12.dp)
-            .fillMaxWidth() // Adapt to available space in weighted box
+            .fillMaxWidth() // Адаптація до доступного простору
     ) {
         Text(text = label, style = Typography.bodyMedium, fontSize = 14.sp)
         
@@ -345,7 +345,7 @@ fun StatsCircularProgress(
     strokeWidth: Dp
 ) {
     Canvas(modifier = Modifier.size(size)) {
-        // Background track
+        // Фонова доріжка
         drawArc(
             color = Color.White,
             startAngle = 0f,
