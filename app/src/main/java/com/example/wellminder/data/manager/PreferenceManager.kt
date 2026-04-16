@@ -70,6 +70,10 @@ class PreferenceManager(context: Context) {
         get() = sharedPreferences.getString("preferred_step_source", null)
         set(value) = sharedPreferences.edit().putString("preferred_step_source", value).apply()
 
+    var isHealthConnectInfoShown: Boolean
+        get() = sharedPreferences.getBoolean("is_health_connect_info_shown", false)
+        set(value) = sharedPreferences.edit().putBoolean("is_health_connect_info_shown", value).apply()
+
     fun clear() {
         sharedPreferences.edit().clear().apply()
         _userIdFlow.value = -1L

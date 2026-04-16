@@ -54,6 +54,9 @@ class ProfileViewModel @Inject constructor(
     var preferredSourceKey by mutableStateOf<String?>(null)
         private set
 
+    var showHealthConnectInfo by mutableStateOf(false)
+        private set
+
     private val _navigationEvent = Channel<String>()
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
@@ -94,11 +97,22 @@ class ProfileViewModel @Inject constructor(
             if (sdkStatus == androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE) {
                 permissionsGranted = healthConnectManager.hasAllPermissions()
                 preferredSourceKey = preferenceManager.preferredStepSource ?: "all"
+                
+                // Показуємо інфо лише якщо дозволи ще не надані і ми ще не показували його
+                if (!permissionsGranted && !preferenceManager.isHealthConnectInfoShown) {
+                    showHealthConnectInfo = true
+                }
+                
                 if (permissionsGranted) {
                     fetchSteps()
                 }
             }
         }
+    }
+
+    fun onHealthConnectInfoDismissed() {
+        showHealthConnectInfo = false
+        preferenceManager.isHealthConnectInfoShown = true
     }
 
     fun selectStepSource(key: String) {
@@ -143,9 +157,10 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             val currentProfile = userProfile ?: return@launch
             
-            // Якщо вмикаємо -> ставимо час "ЗАРАЗ". Якщо вимикаємо -> null? 
-            // Краще очистити, щоб скинути стан.
-            val syncTime = if (enabled) System.currentTimeMillis() else null
+            // Якщо вмикаємо -> ставимо час "ПОЧАТОК СЬОГОДНІ", щоб не втратити ранкові кроки.
+            val syncTime = if (enabled) {
+                java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+            } else null
             
             val updatedProfile = currentProfile.copy(
                 isHealthConnectEnabled = enabled,

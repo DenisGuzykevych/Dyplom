@@ -7,5 +7,7 @@ import androidx.room.PrimaryKey
 data class DailyStepsEntity(
     val date: String, // Формат: "YYYY-MM-DD"
     val userId: Long,
-    val manualStepCount: Int = 0
+    val manualStepCount: Int = 0,
+    val sensorStepCount: Int = 0,
+    val totalStepCount: Int = 0
 )

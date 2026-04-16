@@ -19,7 +19,8 @@ class StatsViewModel @Inject constructor(
     private val userDao: com.example.wellminder.data.local.dao.UserDao,
     private val statsRepository: com.example.wellminder.data.repository.StatsRepository,
     private val foodRepository: com.example.wellminder.data.repository.FoodRepository,
-    private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager
+    private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager,
+    private val healthConnectManager: com.example.wellminder.data.manager.HealthConnectManager
 ) : ViewModel() {
 
     var currentWeight by mutableFloatStateOf(0f)
@@ -161,8 +162,27 @@ class StatsViewModel @Inject constructor(
         
         // Steps
         launch {
-            statsRepository.getManualSteps(date, userId).collect {
-                stepCount = it
+            statsRepository.getTotalSteps(date, userId).collect { dbSteps ->
+                if (date == java.time.LocalDate.now()) {
+                    // Для Сьогодні додаємо "живі" дані з Health Connect поверх ручних
+                    var sensorSteps = 0
+                    if (healthConnectManager.hasAllPermissions()) {
+                        val profile = userDao.getUserProfile(userId)
+                        val now = java.time.Instant.now()
+                        val startOfDay = date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant()
+                        
+                        // Початок синхронізації (як на головному екрані)
+                        val syncStartTime = profile?.healthConnectSyncStartTime?.let { java.time.Instant.ofEpochMilli(it) }
+                        val effectiveStart = if (syncStartTime != null && syncStartTime.isAfter(startOfDay)) syncStartTime else startOfDay
+                        
+                        val source = preferenceManager.preferredStepSource
+                        sensorSteps = healthConnectManager.readStepsFiltered(effectiveStart, now, source).toInt()
+                    }
+                    val manualSteps = statsRepository.getManualStepsOneShot(date, userId)
+                    stepCount = manualSteps + sensorSteps
+                } else {
+                    stepCount = dbSteps
+                }
             }
         }
 

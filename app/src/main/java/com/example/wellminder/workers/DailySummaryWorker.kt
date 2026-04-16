@@ -9,6 +9,7 @@ import com.example.wellminder.data.local.dao.DailyStepsDao
 import com.example.wellminder.data.local.dao.DailySummaryDao
 import com.example.wellminder.data.local.dao.UserDao
 import com.example.wellminder.data.local.dao.WaterDao
+import com.example.wellminder.data.local.entities.DailyStepsEntity
 import com.example.wellminder.data.local.entities.DailySummaryEntity
 import com.example.wellminder.data.manager.HealthConnectManager
 import dagger.assisted.Assisted
@@ -49,15 +50,40 @@ class DailySummaryWorker @AssistedInject constructor(
             }
 
             userIds.forEach { userId ->
-                // Перевіряємо, чи дані вже оброблені
-                if (dailySummaryDao.getSummary(dateStr, userId) == null) {
+                // 1. Отримуємо кроки (з БД та Health Connect)
+                var manualSteps = 0
+                var sensorSteps = 0
+                
+                val dailySteps = dailyStepsDao.getStepsOneShot(dateStr, userId)
+                manualSteps = dailySteps?.manualStepCount ?: 0
+                
+                val profile = userDao.getUserProfile(userId)
+                if (profile?.isHealthConnectEnabled == true && 
+                    healthConnectManager.checkAvailability() == androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE &&
+                    healthConnectManager.hasAllPermissions()) {
                     
-                    // 2. Вага (Зріз: Остання відома вага на момент кінця вчорашнього дня або раніше)
+                    val source = (applicationContext as? android.app.Application)?.getSharedPreferences("wellminder_prefs", Context.MODE_PRIVATE)
+                        ?.getString("preferred_step_source", "all")
+
+                    sensorSteps = healthConnectManager.readStepsFiltered(startOfDay, endOfDay.minusMillis(1), source).toInt()
+                }
+
+                // Зберігаємо кроки в БД для історії
+                val updatedDailySteps = DailyStepsEntity(
+                    date = dateStr,
+                    userId = userId,
+                    manualStepCount = manualSteps,
+                    sensorStepCount = sensorSteps,
+                    totalStepCount = manualSteps + sensorSteps
+                )
+                dailyStepsDao.insertOrUpdate(updatedDailySteps)
+
+                // 2. Вага (Зріз: Остання відома вага)
+                if (dailySummaryDao.getSummary(dateStr, userId) == null) {
                     val weightLogs = userDao.getWeightLogs(userId, 0)
                     val lastWeightLog = weightLogs.filter { it.date < endOfDay.toEpochMilli() }.maxByOrNull { it.date }
-                    val weight = lastWeightLog?.weightValue ?: userDao.getUserProfile(userId)?.currentWeight ?: 0f
+                    val weight = lastWeightLog?.weightValue ?: profile?.currentWeight ?: 0f
 
-                    // 5. Збереження підсумку (3NF: Тільки зріз ваги)
                     val summary = DailySummaryEntity(
                         date = dateStr,
                         userId = userId,

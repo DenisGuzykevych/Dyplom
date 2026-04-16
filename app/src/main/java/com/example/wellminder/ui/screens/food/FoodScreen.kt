@@ -50,6 +50,7 @@ fun FoodScreen(
     
     // Стан для діалогів
     var showAddProductOverlay by remember { mutableStateOf(false) }
+    var showAddChoiceDialog by remember { mutableStateOf(false) } // Нове меню вибору
     var itemToEdit by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var itemToDelete by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var editProductItem by remember { mutableStateOf<FoodWithNutrients?>(null) }
@@ -118,7 +119,7 @@ fun FoodScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable { showAddProductOverlay = true }
+                                .clickable { showAddChoiceDialog = true }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(
@@ -217,18 +218,6 @@ fun FoodScreen(
                     focusedBorderColor = Color(0xFFFF8A00),
                     unfocusedBorderColor = Color.Transparent,
                 ),
-                trailingIcon = {
-                    IconButton(onClick = { 
-                        viewModel.resetScanResult()
-                        showBarcodeScanner = true 
-                    }) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCodeScanner,
-                            contentDescription = "Scan",
-                            tint = Color(0xFFFF8A00)
-                        )
-                    }
-                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -379,6 +368,65 @@ fun FoodScreen(
     }
 
     // Діалоги
+    if (showAddChoiceDialog) {
+        Dialog(onDismissRequest = { showAddChoiceDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Додати продукт",
+                        style = Typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Кнопка Вручну
+                    Button(
+                        onClick = {
+                            showAddChoiceDialog = false
+                            showAddProductOverlay = true
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5F5F5))
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFF8A00))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Ввести вручну", color = Color.Black, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Кнопка Сканер
+                    Button(
+                        onClick = {
+                            showAddChoiceDialog = false
+                            viewModel.resetScanResult()
+                            showBarcodeScanner = true
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8A00))
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Сканер штрих-коду", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
     if (showAddProductOverlay) {
         AddProductOverlay(
             onDismiss = { showAddProductOverlay = false },

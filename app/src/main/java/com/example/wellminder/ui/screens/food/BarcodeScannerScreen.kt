@@ -72,12 +72,12 @@ fun BarcodeScannerScreen(
                     val previewView = PreviewView(ctx)
                     val executor = ContextCompat.getMainExecutor(ctx)
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
-
                     cameraProviderFuture.addListener({
-                        val cameraProvider = (cameraProviderFuture as java.util.concurrent.Future<ProcessCameraProvider>).get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
+                        try {
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = Preview.Builder().build().also {
+                                it.setSurfaceProvider(previewView.surfaceProvider)
+                            }
 
                         val scanner = ImageAnalysis.Builder()
                             .setTargetResolution(Size(1280, 720))
@@ -102,11 +102,14 @@ fun BarcodeScannerScreen(
                                 scanner
                             )
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            android.util.Log.e("Scanner", "Binding failed", e)
                         }
-                    }, executor)
-                    previewView
-                },
+                    } catch (e: Exception) {
+                        android.util.Log.e("Scanner", "Init failed", e)
+                    }
+                }, executor)
+                previewView
+            },
                 modifier = Modifier.fillMaxSize()
             )
         } else {

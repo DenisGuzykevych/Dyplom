@@ -60,16 +60,18 @@ class HealthConnectManager @Inject constructor(
             val response = healthConnectClient.readRecords(request)
             
             var totalSteps = 0L
+            val normalizedFilterKey = filterKey.trim().lowercase()
+            
             response.records.forEach { record ->
                 val pkg = record.metadata.dataOrigin.packageName
                 val device = record.metadata.device?.model ?: "Невідомий пристрій"
-                val key = "$pkg ($device)"
+                val key = "$pkg ($device)".trim().lowercase()
                 
-                if (key == filterKey) {
+                if (key == normalizedFilterKey || pkg.lowercase() == normalizedFilterKey) {
                     totalSteps += record.count
                 }
             }
-            android.util.Log.d("HealthConnectManager", "readStepsFiltered: $totalSteps for $filterKey")
+            android.util.Log.d("HealthConnectManager", "readStepsFiltered: $totalSteps for $filterKey (normalized: $normalizedFilterKey)")
             totalSteps
         } catch (e: Exception) {
             android.util.Log.e("HealthConnectManager", "readStepsFiltered error", e)

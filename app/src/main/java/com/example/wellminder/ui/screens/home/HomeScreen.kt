@@ -205,11 +205,12 @@ fun HomeScreen(
         if (showStepsInfo) {
             AlertDialog(
                 onDismissRequest = { showStepsInfo = false },
-                title = { Text("Про підрахунок кроків") },
+                title = { Text("Про підрахунок кроків", color = Color(0xFF1C1B1F)) },
                 text = {
                     Text("Дані про кроки автоматично зчитуються через Health Connect.\n\n" +
                          "Система збирає дані з сенсорів вашого телефону, а також з підключених годинників. " +
-                         "Ви можете вибрати пріоритетне джерело даних у Налаштуваннях профілю (Health Connect).")
+                         "Ви можете вибрати пріоритетне джерело даних у Налаштуваннях профілю (Health Connect).",
+                         color = Color(0xFF1C1B1F))
                 },
                 confirmButton = {
                     TextButton(onClick = { showStepsInfo = false }) {

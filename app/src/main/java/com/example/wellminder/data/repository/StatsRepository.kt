@@ -18,8 +18,12 @@ class StatsRepository @Inject constructor(
         return userDao.getUserProfile(userId)?.height ?: 175 // За замовчуванням 175 см
     }
 
-    fun getManualSteps(date: LocalDate, userId: Long): Flow<Int> {
-        return dailyStepsDao.getSteps(date.toString(), userId).map { it?.manualStepCount ?: 0 }
+    fun getTotalSteps(date: LocalDate, userId: Long): Flow<Int> {
+        return dailyStepsDao.getSteps(date.toString(), userId).map { entity ->
+            val manual = entity?.manualStepCount ?: 0
+            val sensor = entity?.sensorStepCount ?: 0
+            manual + sensor
+        }
     }
 
     suspend fun getManualStepsOneShot(date: LocalDate, userId: Long): Int {
