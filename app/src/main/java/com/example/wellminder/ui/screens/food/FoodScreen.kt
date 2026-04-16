@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +54,11 @@ fun FoodScreen(
     var itemToDelete by remember { mutableStateOf<ConsumedFoodDetail?>(null) }
     var editProductItem by remember { mutableStateOf<FoodWithNutrients?>(null) }
     var itemToAdd by remember { mutableStateOf<FoodWithNutrients?>(null) }
+    
+    // Стан для сканера
+    var showBarcodeScanner by remember { mutableStateOf(false) }
+    var scannedProduct by remember { mutableStateOf<FoodWithNutrients?>(null) }
+    var isScannedProductLocal by remember { mutableStateOf(false) }
     
     val context = LocalContext.current
     
@@ -210,7 +216,19 @@ fun FoodScreen(
                     unfocusedContainerColor = Color.White,
                     focusedBorderColor = Color(0xFFFF8A00),
                     unfocusedBorderColor = Color.Transparent,
-                )
+                ),
+                trailingIcon = {
+                    IconButton(onClick = { 
+                        viewModel.resetScanResult()
+                        showBarcodeScanner = true 
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCodeScanner,
+                            contentDescription = "Scan",
+                            tint = Color(0xFFFF8A00)
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -431,6 +449,45 @@ fun FoodScreen(
                     timestamp = itemToEdit!!.consumed.timestamp
                 )
                 itemToEdit = null
+            }
+        )
+    }
+
+    if (showBarcodeScanner) {
+        BarcodeScannerScreen(
+            onDismiss = { showBarcodeScanner = false },
+            onProductFound = { food, isLocal ->
+                isScannedProductLocal = isLocal
+                scannedProduct = food
+                showBarcodeScanner = false
+            },
+            viewModel = viewModel
+        )
+    }
+
+    if (scannedProduct != null) {
+        val prod = scannedProduct!!
+        AddProductOverlay(
+            initialName = prod.food.name,
+            initialProteins = prod.nutrients?.proteins ?: 0f,
+            initialFats = prod.nutrients?.fats ?: 0f,
+            initialCarbs = prod.nutrients?.carbohydrates ?: 0f,
+            initialCalories = prod.nutrients?.calories ?: 0,
+            initialBarcode = prod.food.barcode,
+            isAlreadyInLibrary = isScannedProductLocal,
+            onDismiss = { 
+                scannedProduct = null
+                isScannedProductLocal = false
+            },
+            onSave = { name, prot, fats, carbs, cals ->
+                if (!isScannedProductLocal) {
+                    viewModel.addFood(name, prot, fats, carbs, cals, prod.food.barcode)
+                }
+                // Якщо продукт вже був локальний, ми його не перезберігаємо, 
+                // а просто переходимо до логування в прийом їжі
+                itemToAdd = prod
+                scannedProduct = null
+                isScannedProductLocal = false
             }
         )
     }

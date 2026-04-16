@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,14 +30,22 @@ import com.example.wellminder.ui.theme.Typography
 @Composable
 fun AddProductOverlay(
     onDismiss: () -> Unit,
-    onSave: (String, Float, Float, Float, Int) -> Unit
+    onSave: (String, Float, Float, Float, Int) -> Unit,
+    initialName: String = "",
+    initialProteins: Float = 0f,
+    initialFats: Float = 0f,
+    initialCarbs: Float = 0f,
+    initialCalories: Int = 0,
+    initialBarcode: String? = null,
+    isAlreadyInLibrary: Boolean = false
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
     var portion by remember { mutableStateOf("100") } // Visual only
-    var proteins by remember { mutableStateOf("") }
-    var fats by remember { mutableStateOf("") }
-    var carbs by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
+    var proteins by remember { mutableStateOf(if (initialProteins > 0) initialProteins.toString() else "") }
+    var fats by remember { mutableStateOf(if (initialFats > 0) initialFats.toString() else "") }
+    var carbs by remember { mutableStateOf(if (initialCarbs > 0) initialCarbs.toString() else "") }
+    var calories by remember { mutableStateOf(if (initialCalories > 0) initialCalories.toString() else "") }
+    var barcode by remember { mutableStateOf(initialBarcode) }
     
     // Auto-calculate calories when macros change
     LaunchedEffect(proteins, fats, carbs) {
@@ -110,7 +119,11 @@ fun AddProductOverlay(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                                 modifier = Modifier.height(32.dp)
                             ) {
-                                Text("Зберегти", fontSize = 12.sp, color = Color.White)
+                                Text(
+                                    text = if (isAlreadyInLibrary) "Вибрати" else "Зберегти",
+                                    fontSize = 12.sp,
+                                    color = Color.White
+                                )
                             }
                             
                             Spacer(modifier = Modifier.width(12.dp))
@@ -123,6 +136,36 @@ fun AddProductOverlay(
                                     .size(24.dp)
                                     .clickable { onDismiss() }
                             )
+                        }
+                    }
+                    
+                    if (isAlreadyInLibrary) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFFE65100),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Цей продукт вже є у вашій бібліотеці. Ви можете вибрати його для запису або оновити дані.",
+                                    color = Color(0xFFE65100),
+                                    fontSize = 13.sp,
+                                    lineHeight = 18.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
                     }
 

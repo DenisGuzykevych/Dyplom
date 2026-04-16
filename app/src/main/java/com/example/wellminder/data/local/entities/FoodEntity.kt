@@ -9,5 +9,6 @@ import androidx.room.PrimaryKey
 )
 data class FoodEntity(
     @PrimaryKey(autoGenerate = true) val foodId: Long = 0,
-    val name: String
+    val name: String,
+    val barcode: String? = null
 )

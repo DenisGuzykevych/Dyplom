@@ -4,13 +4,15 @@ import com.example.wellminder.data.local.dao.FoodDao
 import com.example.wellminder.data.local.entities.FoodEntity
 import com.example.wellminder.data.local.entities.FoodNutrientEntity
 import com.example.wellminder.data.local.entities.FoodWithNutrients
+import com.example.wellminder.data.remote.NutrimentsData
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class FoodRepository @Inject constructor(
     private val foodDao: FoodDao,
     private val consumedFoodDao: com.example.wellminder.data.local.dao.ConsumedFoodDao,
-    private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager
+    private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager,
+    private val openFoodFactsApi: com.example.wellminder.data.remote.OpenFoodFactsApi
 ) {
     fun getAllFood(): Flow<List<FoodWithNutrients>> {
         return foodDao.getAllFoodWithDetails()
@@ -36,12 +38,14 @@ class FoodRepository @Inject constructor(
         proteins: Float,
         fats: Float,
         carbs: Float,
-        calories: Int
+        calories: Int,
+        barcode: String? = null
     ) {
-        // 1. Спочатку створюємо сам продукт (без категорії)
+        // 1. Спочатку створюємо сам продукт
         val foodId = foodDao.insertFood(
             FoodEntity(
-                name = name
+                name = name,
+                barcode = barcode
             )
         )
 
@@ -64,9 +68,10 @@ class FoodRepository @Inject constructor(
         proteins: Float,
         fats: Float,
         carbs: Float,
-        calories: Int
+        calories: Int,
+        barcode: String? = null
     ) {
-        val food = FoodEntity(foodId = foodId, name = name)
+        val food = FoodEntity(foodId = foodId, name = name, barcode = barcode)
         val nutrients = FoodNutrientEntity(
             nutrientId = nutrientId,
             foodId = foodId,
@@ -127,5 +132,61 @@ class FoodRepository @Inject constructor(
                 mealType = "" 
             )
         )
+    }
+
+    suspend fun findProductByBarcode(barcode: String): FoodWithNutrients? {
+        // 1. Спочатку шукаємо в локальній БД
+        val localProduct = foodDao.getFoodByBarcode(barcode)
+        if (localProduct != null) return localProduct
+
+        // 2. Якщо немає локально, шукаємо в API
+        return try {
+            val response = openFoodFactsApi.getProduct(barcode)
+            android.util.Log.d("FoodRepository", "API Response for $barcode: status=${response.status}, product=${response.product?.productName}")
+            
+            if (response.status == 1 && response.product != null) {
+                val product = response.product
+                val n = product.nutriments
+                
+                if (n != null) {
+                    android.util.Log.d("FoodRepository", "Nutriments: prot=${n.proteins100g}, fat=${n.fat100g}, carbs=${n.carbohydrates100g}, kcal=${n.energyKcal100g}")
+                } else {
+                    android.util.Log.w("FoodRepository", "Nutriments object is NULL for $barcode")
+                }
+
+                val proteins = toSafeFloat(n?.proteins100g)
+                val fats = toSafeFloat(n?.fat100g)
+                val carbs = toSafeFloat(n?.carbohydrates100g)
+                val kcal = toSafeFloat(n?.energyKcal100g ?: n?.energyKcal)
+                
+                // Створюємо об'єкт для UI
+                FoodWithNutrients(
+                    food = FoodEntity(
+                        name = product.productName ?: "Невідомий продукт",
+                        barcode = barcode
+                    ),
+                    nutrients = FoodNutrientEntity(
+                        foodId = 0,
+                        proteins = proteins,
+                        fats = fats,
+                        carbohydrates = carbs,
+                        calories = kcal.toInt()
+                    )
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FoodRepository", "Error fetching product by barcode", e)
+            null
+        }
+    }
+
+    private fun toSafeFloat(value: Any?): Float {
+        return when (value) {
+            is Number -> value.toFloat()
+            is String -> value.toFloatOrNull() ?: 0f
+            else -> 0f
+        }
     }
 }

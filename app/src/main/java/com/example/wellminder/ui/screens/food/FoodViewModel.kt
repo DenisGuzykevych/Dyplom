@@ -26,9 +26,41 @@ import androidx.compose.runtime.setValue
 class FoodViewModel @Inject constructor(
     private val repository: FoodRepository,
     private val userDao: UserDao,
-    private val preferenceManager: PreferenceManager,
+    private val preferenceManager: com.example.wellminder.data.manager.PreferenceManager,
     private val appDatabase: com.example.wellminder.data.local.AppDatabase
 ) : ViewModel() {
+
+    sealed class ScanResult {
+        object Idle : ScanResult()
+        object Loading : ScanResult()
+        data class Success(val food: com.example.wellminder.data.local.entities.FoodWithNutrients, val isLocal: Boolean) : ScanResult()
+        object NotFound : ScanResult()
+        data class Error(val message: String) : ScanResult()
+    }
+
+    private val _scanResult = kotlinx.coroutines.flow.MutableStateFlow<ScanResult>(ScanResult.Idle)
+    val scanResult: StateFlow<ScanResult> = _scanResult.asStateFlow()
+
+    fun resetScanResult() {
+        android.util.Log.d("FoodViewModel", "resetScanResult: resetting to Idle")
+        _scanResult.value = ScanResult.Idle
+    }
+
+    fun searchProductByBarcode(barcode: String) {
+        if (_scanResult.value is ScanResult.Loading) return
+        
+        _scanResult.value = ScanResult.Loading
+        viewModelScope.launch {
+            val result = repository.findProductByBarcode(barcode)
+            if (result != null) {
+                // Провіряємо чи він локальний (в нього буде foodId > 0)
+                val isLocal = result.food.foodId > 0
+                _scanResult.value = ScanResult.Success(result, isLocal)
+            } else {
+                _scanResult.value = ScanResult.NotFound
+            }
+        }
+    }
 
     fun populateFoodDb(onComplete: (String) -> Unit) {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -130,10 +162,11 @@ class FoodViewModel @Inject constructor(
         proteins: Float,
         fats: Float,
         carbs: Float,
-        calories: Int
+        calories: Int,
+        barcode: String? = null
     ) {
         viewModelScope.launch {
-            repository.saveFood(name, proteins, fats, carbs, calories)
+            repository.saveFood(name, proteins, fats, carbs, calories, barcode)
         }
     }
 

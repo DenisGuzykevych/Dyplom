@@ -50,6 +50,9 @@ class ProfileViewModel @Inject constructor(
 
     var rawRecords by mutableStateOf<List<String>>(emptyList())
         private set
+        
+    var preferredSourceKey by mutableStateOf<String?>(null)
+        private set
 
     private val _navigationEvent = Channel<String>()
     val navigationEvent = _navigationEvent.receiveAsFlow()
@@ -90,10 +93,19 @@ class ProfileViewModel @Inject constructor(
             sdkStatus = healthConnectManager.checkAvailability() 
             if (sdkStatus == androidx.health.connect.client.HealthConnectClient.SDK_AVAILABLE) {
                 permissionsGranted = healthConnectManager.hasAllPermissions()
+                preferredSourceKey = preferenceManager.preferredStepSource ?: "all"
                 if (permissionsGranted) {
                     fetchSteps()
                 }
             }
+        }
+    }
+
+    fun selectStepSource(key: String) {
+        viewModelScope.launch {
+            preferenceManager.preferredStepSource = key
+            preferredSourceKey = key
+            fetchSteps()
         }
     }
 
@@ -119,7 +131,8 @@ class ProfileViewModel @Inject constructor(
                 // Якщо час старту пізніше ніж зараз -> поверне 0 (це ок)
                 // Не запитуємо дані з майбутнього
                 
-                steps = healthConnectManager.readSteps(effectiveStartTime, now).toInt()
+                val source = preferenceManager.preferredStepSource
+                steps = healthConnectManager.readStepsFiltered(effectiveStartTime, now, source).toInt()
                 stepsBreakdown = healthConnectManager.getStepsBreakdown(effectiveStartTime, now)
                 rawRecords = healthConnectManager.getRawStepRecords(effectiveStartTime, now)
             }

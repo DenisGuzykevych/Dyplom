@@ -40,6 +40,10 @@ interface FoodDao {
 
     @Query("SELECT * FROM food WHERE name = :name LIMIT 1")
     suspend fun getFoodByName(name: String): FoodEntity?
+
+    @Transaction
+    @Query("SELECT * FROM food WHERE barcode = :barcode LIMIT 1")
+    suspend fun getFoodByBarcode(barcode: String): FoodWithNutrients?
 }
 
 

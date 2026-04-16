@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Fastfood
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.automirrored.rounded.DirectionsRun
@@ -54,6 +55,7 @@ fun HomeScreen(
     var showCaloriesOverlay by remember { mutableStateOf(false) }
     var showStepsOverlay by remember { mutableStateOf(false) }
     var showAddFoodOverlay by remember { mutableStateOf(false) }
+    var showStepsInfo by remember { mutableStateOf(false) }
     var stepCount by remember { mutableIntStateOf(0) }
 
     val consumedCalories = viewModel.consumedCalories
@@ -134,7 +136,8 @@ fun HomeScreen(
                 progress = stepCount.toFloat() / stepTarget.toFloat(),
                 progressColor = Color(0xFFFF002E),
                 subtitle = "Пройдено $stepCount кроків\nз $stepTarget",
-                onClick = { showStepsOverlay = true }
+                onClick = { showStepsOverlay = true },
+                onInfoClick = { showStepsInfo = true }
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -199,6 +202,25 @@ fun HomeScreen(
             )
         }
 
+        if (showStepsInfo) {
+            AlertDialog(
+                onDismissRequest = { showStepsInfo = false },
+                title = { Text("Про підрахунок кроків") },
+                text = {
+                    Text("Дані про кроки автоматично зчитуються через Health Connect.\n\n" +
+                         "Система збирає дані з сенсорів вашого телефону, а також з підключених годинників. " +
+                         "Ви можете вибрати пріоритетне джерело даних у Налаштуваннях профілю (Health Connect).")
+                },
+                confirmButton = {
+                    TextButton(onClick = { showStepsInfo = false }) {
+                        Text("Зрозуміло", color = Color(0xFFFF8A00))
+                    }
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
+            )
+        }
+
     }
 
 
@@ -211,7 +233,8 @@ fun NormCard(
     progress: Float,
     progressColor: Color,
     subtitle: String,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onInfoClick: (() -> Unit)? = null
 ) {
     Card(
         shape = RoundedCornerShape(32.dp),
@@ -250,6 +273,18 @@ fun NormCard(
                     Text(text = title, style = Typography.titleMedium, fontSize = 20.sp)
                     Spacer(modifier = Modifier.width(4.dp))
                     Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+                    
+                    if (onInfoClick != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                            contentDescription = "Info",
+                            tint = Color.Gray,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable { onInfoClick() }
+                        )
+                    }
                 }
                 Text(
                     text = subtitle, 

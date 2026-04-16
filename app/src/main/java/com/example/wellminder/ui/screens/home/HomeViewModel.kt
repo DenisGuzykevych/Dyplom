@@ -173,8 +173,13 @@ class HomeViewModel @Inject constructor(
                     val endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().minusMillis(1)
 
                     if (effectiveStartTime.isBefore(endOfDay)) {
-                        val fetchedSteps = healthConnectManager.readSteps(effectiveStartTime, endOfDay).toInt()
+                        val source = preferenceManager.preferredStepSource
+                        val fetchedSteps = healthConnectManager.readStepsFiltered(effectiveStartTime, endOfDay, source).toInt()
                         sensorSteps = fetchedSteps
+                        
+                        // Діагностика: звідки взялися кроки?
+                        val breakdown = healthConnectManager.getStepsBreakdown(effectiveStartTime, endOfDay)
+                        android.util.Log.d("HomeViewModel", "Steps Breakdown: $breakdown")
                     } else {
                          sensorSteps = 0
                     }

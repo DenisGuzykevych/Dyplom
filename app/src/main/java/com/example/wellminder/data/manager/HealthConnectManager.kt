@@ -47,6 +47,36 @@ class HealthConnectManager @Inject constructor(
         }
     }
 
+    suspend fun readStepsFiltered(startTime: Instant, endTime: Instant, filterKey: String?): Long {
+        if (filterKey == null || filterKey == "all") {
+            return readSteps(startTime, endTime)
+        }
+        
+        return try {
+            val request = androidx.health.connect.client.request.ReadRecordsRequest(
+                recordType = StepsRecord::class,
+                timeRangeFilter = TimeRangeFilter.between(startTime, endTime)
+            )
+            val response = healthConnectClient.readRecords(request)
+            
+            var totalSteps = 0L
+            response.records.forEach { record ->
+                val pkg = record.metadata.dataOrigin.packageName
+                val device = record.metadata.device?.model ?: "Невідомий пристрій"
+                val key = "$pkg ($device)"
+                
+                if (key == filterKey) {
+                    totalSteps += record.count
+                }
+            }
+            android.util.Log.d("HealthConnectManager", "readStepsFiltered: $totalSteps for $filterKey")
+            totalSteps
+        } catch (e: Exception) {
+            android.util.Log.e("HealthConnectManager", "readStepsFiltered error", e)
+            0L
+        }
+    }
+
     suspend fun getStepsBreakdown(startTime: Instant, endTime: Instant): Map<String, Long> {
         return try {
             val request = androidx.health.connect.client.request.ReadRecordsRequest(

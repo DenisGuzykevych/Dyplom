@@ -23,7 +23,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.health.connect.client.PermissionController
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext // Added for open settings if needed
 
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -75,7 +74,7 @@ fun HealthConnectScreen(
             shape = RoundedCornerShape(32.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp) // Approximate height based on screenshot
+                .height(300.dp)
                 .shadow(4.dp, RoundedCornerShape(32.dp))
         ) {
             Column(
@@ -123,14 +122,23 @@ fun HealthConnectScreen(
                             color = Color(0xFFFF8A00)
                         )
                         
-                        if (viewModel.stepsBreakdown.isNotEmpty()) {
+                        if (viewModel.stepsBreakdown.isNotEmpty() || viewModel.permissionsGranted) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = "Джерела (Сума):", style = Typography.titleSmall, color = Color.Gray)
+                            Text(text = "Пристрій для підрахунку:", style = Typography.titleSmall, color = Color.Gray)
+                            
+                            // Опція "Усі джерела"
+                            SourceItem(
+                                name = "Усі джерела (Авто)",
+                                isSelected = viewModel.preferredSourceKey == "all" || viewModel.preferredSourceKey == null,
+                                onClick = { viewModel.selectStepSource("all") }
+                            )
+
                             viewModel.stepsBreakdown.forEach { (pkg, count) ->
-                                Text(
-                                    text = "$pkg: $count",
-                                    style = Typography.bodySmall,
-                                    color = Color.Black
+                                SourceItem(
+                                    name = pkg,
+                                    isSelected = viewModel.preferredSourceKey == pkg,
+                                    onClick = { viewModel.selectStepSource(pkg) },
+                                    count = count
                                 )
                             }
                         }
@@ -138,9 +146,6 @@ fun HealthConnectScreen(
                         if (viewModel.rawRecords.isNotEmpty()) {
                              Spacer(modifier = Modifier.height(16.dp))
                              Text(text = "Детальний журнал:", style = Typography.titleSmall, color = Color.Gray)
-                             // Limit to last 5-10 records or show all in a scrollable column? 
-                             // Card has specific height. Should make it scrollable or just show first few.
-                             // Making the whole column scrollable.
                              viewModel.rawRecords.take(10).forEach { record ->
                                  Text(
                                     text = record,
@@ -217,12 +222,50 @@ fun HealthConnectScreen(
                 .height(56.dp)
         ) {
              Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Build, contentDescription = null, tint = Color.White) // Using Build as placeholder for Plug
+                Icon(Icons.Default.Build, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Перевірити дозволи",
                     style = Typography.titleMedium,
                     color = Color.White
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SourceItem(
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    count: Long? = null
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFFF8A00))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = Typography.bodyMedium,
+                color = if (isSelected) Color(0xFFFF8A00) else Color.Black,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+            if (count != null) {
+                Text(
+                    text = "$count кроків сьогодні",
+                    style = Typography.labelSmall,
+                    color = Color.Gray
                 )
             }
         }

@@ -66,6 +66,10 @@ class PreferenceManager(context: Context) {
         get() = sharedPreferences.getString("user_goal", "MAINTAIN")
         set(value) = sharedPreferences.edit().putString("user_goal", value).apply()
 
+    var preferredStepSource: String?
+        get() = sharedPreferences.getString("preferred_step_source", null)
+        set(value) = sharedPreferences.edit().putString("preferred_step_source", value).apply()
+
     fun clear() {
         sharedPreferences.edit().clear().apply()
         _userIdFlow.value = -1L
