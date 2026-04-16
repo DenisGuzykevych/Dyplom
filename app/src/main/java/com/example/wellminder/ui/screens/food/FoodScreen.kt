@@ -65,6 +65,16 @@ fun FoodScreen(
     
     // Стан вибору прийому їжі
     var selectedMeal by remember { mutableStateOf(MealType.BREAKFAST) }
+    
+    // Захист від подвійних кліків (для Xiaomi)
+    var lastClickTime by remember { mutableStateOf(0L) }
+    fun safeClick(action: () -> Unit) {
+        val now = System.currentTimeMillis()
+        if (now - lastClickTime > 500L) {
+            lastClickTime = now
+            action()
+        }
+    }
 
     Scaffold(
         containerColor = Color(0xFFEFF5FF),
@@ -119,7 +129,7 @@ fun FoodScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .clickable { showAddChoiceDialog = true }
+                                .clickable { safeClick { showAddChoiceDialog = true } }
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Icon(
@@ -150,7 +160,7 @@ fun FoodScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 8.dp)
-                                    .clickable { itemToAdd = item }, 
+                                    .clickable { safeClick { itemToAdd = item } }, 
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
@@ -171,7 +181,7 @@ fun FoodScreen(
                                     tint = Color(0xFFFF8A00),
                                     modifier = Modifier
                                         .size(20.dp)
-                                        .clickable { editProductItem = item }
+                                        .clickable { safeClick { editProductItem = item } }
                                 )
                                 
                                 Spacer(modifier = Modifier.width(16.dp))
@@ -182,7 +192,7 @@ fun FoodScreen(
                                     tint = Color(0xFFD32F2F),
                                     modifier = Modifier
                                         .size(20.dp)
-                                        .clickable { viewModel.deleteFood(item) }
+                                        .clickable { safeClick { viewModel.deleteFood(item) } }
                                 )
                             }
                             HorizontalDivider(color = Color(0xFFF0F0F0))

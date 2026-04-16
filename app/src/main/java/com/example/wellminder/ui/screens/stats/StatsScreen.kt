@@ -7,11 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,12 +34,14 @@ import com.example.wellminder.ui.screens.stats.dialogs.UpdateWeightDialog
 import androidx.compose.runtime.*
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun StatsScreen(
     onNavigate: (String) -> Unit,
     viewModel: StatsViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
     val scrollState = rememberScrollState()
     var showWeightDialog by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(key1 = true) {
@@ -61,6 +62,35 @@ fun StatsScreen(
                 showWeightDialog = false
             }
         )
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = viewModel.selectedDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val date = java.time.Instant.ofEpochMilli(millis)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate()
+                        viewModel.onDateSelected(date)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("Вибрати")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Скасувати")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     Scaffold(
@@ -218,31 +248,87 @@ fun StatsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Вибір дати
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        IconButton(onClick = { viewModel.changeDate(-1) }) {
-                            Icon(androidx.compose.material.icons.Icons.Default.ChevronLeft, contentDescription = "Previous Day", tint = Color.Gray)
+                    // Навігація по датах
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            IconButton(onClick = { viewModel.changeDate(-7) }) {
+                                Icon(Icons.Default.KeyboardDoubleArrowLeft, contentDescription = "Week Back", tint = Color.Gray)
+                            }
+                            
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically, 
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { showDatePicker = true }
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Calendar", tint = Color(0xFFFF8A00), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (viewModel.selectedDate == java.time.LocalDate.now()) "Сьогодні" else viewModel.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy")),
+                                    style = Typography.titleMedium.copy(fontSize = 18.sp)
+                                )
+                            }
+                            
+                            IconButton(
+                                onClick = { viewModel.changeDate(7) },
+                                enabled = viewModel.selectedDate.plusDays(7) <= java.time.LocalDate.now()
+                            ) {
+                                Icon(
+                                    Icons.Default.KeyboardDoubleArrowRight, 
+                                    contentDescription = "Week Forward", 
+                                    tint = if (viewModel.selectedDate.plusDays(7) <= java.time.LocalDate.now()) Color.Gray else Color.LightGray
+                                )
+                            }
                         }
                         
-                        Text(
-                            text = if (viewModel.selectedDate == java.time.LocalDate.now()) "Сьогодні" else viewModel.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")),
-                            style = Typography.titleMedium.copy(fontSize = 18.sp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         
-                        IconButton(
-                            onClick = { viewModel.changeDate(1) },
-                            enabled = viewModel.selectedDate < java.time.LocalDate.now()
+                        // Лента днів тижня
+                        val currentScrollDate = viewModel.selectedDate
+                        val startOfWeek = currentScrollDate.minusDays(currentScrollDate.dayOfWeek.value.toLong() - 1)
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Icon(
-                                androidx.compose.material.icons.Icons.Default.ChevronRight, 
-                                contentDescription = "Next Day", 
-                                tint = if (viewModel.selectedDate < java.time.LocalDate.now()) Color.Gray else Color.LightGray
-                            )
+                            for (i in 0..6) {
+                                val date = startOfWeek.plusDays(i.toLong())
+                                val isSelected = date == viewModel.selectedDate
+                                val isToday = date == java.time.LocalDate.now()
+                                val isFuture = date > java.time.LocalDate.now()
+                                
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .weight(1f) // Використовуємо вагу, щоб помістити всі 7 днів
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(if (isSelected) Color(0xFFFF8A00) else Color.Transparent)
+                                        .clickable(enabled = !isFuture) { viewModel.onDateSelected(date) }
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()),
+                                        style = Typography.labelSmall,
+                                        color = if (isSelected) Color.White else if (isFuture) Color.LightGray else Color.Gray,
+                                        fontSize = 10.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = date.dayOfMonth.toString(),
+                                        style = Typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) Color.White else if (isFuture) Color.LightGray else Color.Black
+                                    )
+                                    if (isToday && !isSelected) {
+                                        Box(modifier = Modifier.size(4.dp).background(Color(0xFFFF8A00), CircleShape))
+                                    }
+                                }
+                            }
                         }
                     }
                     

@@ -58,10 +58,18 @@ fun WellMinderTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
+            // Робимо панелі повністю прозорими для контролю з боку Compose
+            window.statusBarColor = Color.Transparent.toArgb()
+            window.navigationBarColor = Color.Transparent.toArgb()
+
             val insetsController = WindowCompat.getInsetsController(window, view)
+            
+            // Якщо тема СВІТЛА (!darkTheme), іконки стають ТЕМНИМИ
             insetsController.isAppearanceLightStatusBars = !darkTheme
-            WindowCompat.setDecorFitsSystemWindows(window, true)
+            insetsController.isAppearanceLightNavigationBars = !darkTheme
+            
+            // Вимикаємо стандартне "вписування", щоб працював edge-to-edge
+            WindowCompat.setDecorFitsSystemWindows(window, false)
         }
     }
 

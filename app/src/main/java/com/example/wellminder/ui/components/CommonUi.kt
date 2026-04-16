@@ -180,7 +180,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.AutoMirrored.Rounded.DirectionsRun, contentDescription = "Home") },
             label = { Text("Головний", fontSize = 10.sp) },
             selected = currentRoute == "home",
-            onClick = { onNavigate("home") },
+            onClick = { if (currentRoute != "home") onNavigate("home") },
             alwaysShowLabel = false,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFFFF8A00),
@@ -193,7 +193,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Fastfood, contentDescription = "Food") },
             label = { Text("Їжа", fontSize = 10.sp) },
             selected = currentRoute == "food",
-            onClick = { onNavigate("food") },
+            onClick = { if (currentRoute != "food") onNavigate("food") },
             alwaysShowLabel = false,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFFFF8A00),
@@ -206,7 +206,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Rounded.Bolt, contentDescription = "Stats") },
             label = { Text("Активність", fontSize = 10.sp) },
             selected = currentRoute == "stats",
-            onClick = { onNavigate("stats") },
+            onClick = { if (currentRoute != "stats") onNavigate("stats") },
             alwaysShowLabel = false,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFFFF8A00),
@@ -219,7 +219,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
             label = { Text("Акаунт", fontSize = 10.sp) },
             selected = currentRoute == "profile",
-            onClick = { onNavigate("profile") },
+            onClick = { if (currentRoute != "profile") onNavigate("profile") },
             alwaysShowLabel = false,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color(0xFFFF8A00),

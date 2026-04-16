@@ -78,6 +78,7 @@ dependencies {
     // Health Connect
     implementation(libs.androidx.health.connect)
     implementation(libs.guava.android)
+    implementation(libs.guava.listenablefuture)
 
     // CameraX
     implementation(libs.androidx.camera.core)

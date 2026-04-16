@@ -92,10 +92,16 @@ class StatsViewModel @Inject constructor(
         reloadDayData()
     }
 
+    fun onDateSelected(date: java.time.LocalDate) {
+        selectedDate = date
+        reloadDayData()
+    }
+
     private fun reloadDayData() {
         val userId = preferenceManager.userId
         if (userId != -1L) {
              viewModelScope.launch { loadWeightForDate(userId, selectedDate) }
+             viewModelScope.launch { loadWeeklyWeight(userId, selectedDate) } // Обновляємо графік для вибраної дати
              
              dailyStatsJob?.cancel()
              dailyStatsJob = viewModelScope.launch {
@@ -104,19 +110,19 @@ class StatsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadWeeklyWeight(userId: Long) {
-        val today = java.time.LocalDate.now()
-        val sevenDaysAgo = today.minusDays(6)
+    private suspend fun loadWeeklyWeight(userId: Long, baseDate: java.time.LocalDate = java.time.LocalDate.now()) {
+        val sevenDaysAgo = baseDate.minusDays(6) // Включаючи baseDate, це рівно 7 днів
         val startDate = sevenDaysAgo.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        // 1. Get initial weight (before the window)
+        // 1. Get initial weight (before the window) to avoid starting from 0
         val initialLog = userDao.getLastWeightLogBefore(userId, startDate)
-        var runningWeight = initialLog?.weightValue ?: 0f // Start with last known or 0
+        var runningWeight = initialLog?.weightValue ?: 0f
 
         // 2. Get logs within the window
         val logs = userDao.getWeightLogs(userId, startDate)
         
         // Map logs to date string (dd.MM) -> weight
+        // Фільтруємо, щоб випадково не взяти дані майбутнього, якщо baseDate в минулому
         val logMap = logs.associate { log ->
             val date = java.time.Instant.ofEpochMilli(log.date).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
             val formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM")
@@ -126,12 +132,12 @@ class StatsViewModel @Inject constructor(
         val resultList = mutableListOf<Pair<String, Float>>()
         val formatter = java.time.format.DateTimeFormatter.ofPattern("dd.MM")
 
-        // Fill last 7 days forward-filling missing values
-        for (i in 0..6) {
+        // Гарантовано генеруємо 7 днів
+        for (i in 0 until 7) {
             val date = sevenDaysAgo.plusDays(i.toLong())
             val dateStr = date.format(formatter)
             
-            // If log exists for this day, update running weight
+            // Оновлюємо поточною вагою, якщо є запис за цей день
             if (logMap.containsKey(dateStr)) {
                 runningWeight = logMap[dateStr] ?: runningWeight
             }

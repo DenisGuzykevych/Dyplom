@@ -57,6 +57,16 @@ fun HomeScreen(
     var showAddFoodOverlay by remember { mutableStateOf(false) }
     var showStepsInfo by remember { mutableStateOf(false) }
     var stepCount by remember { mutableIntStateOf(0) }
+    
+    // Захист від подвійних кліків (для Xiaomi)
+    var lastClickTime by remember { mutableStateOf(0L) }
+    fun safeClick(action: () -> Unit) {
+        val now = System.currentTimeMillis()
+        if (now - lastClickTime > 500L) {
+            lastClickTime = now
+            action()
+        }
+    }
 
     val consumedCalories = viewModel.consumedCalories
     val targetCalories = viewModel.targetCalories
@@ -112,7 +122,7 @@ fun HomeScreen(
                 progress = viewModel.waterIntake.toFloat() / waterTarget.toFloat(),
                 progressColor = Color(0xFF00C2FF),
                 subtitle = "Випито ${viewModel.waterIntake / 1000f}л\nз ${waterTarget / 1000}л",
-                onClick = { showWaterOverlay = true }
+                onClick = { safeClick { showWaterOverlay = true } }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -124,7 +134,7 @@ fun HomeScreen(
                 progress = if (targetCalories > 0) consumedCalories.toFloat() / targetCalories.toFloat() else 0f,
                 progressColor = Color(0xFF4CAF50), // Зелений для калорій
                 subtitle = "Спожито ${consumedCalories}ккал\nз ${targetCalories}ккал",
-                onClick = { showCaloriesOverlay = true }
+                onClick = { safeClick { showCaloriesOverlay = true } }
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -136,7 +146,7 @@ fun HomeScreen(
                 progress = stepCount.toFloat() / stepTarget.toFloat(),
                 progressColor = Color(0xFFFF002E),
                 subtitle = "Пройдено $stepCount кроків\nз $stepTarget",
-                onClick = { showStepsOverlay = true },
+                onClick = { safeClick { showStepsOverlay = true } },
                 onInfoClick = { showStepsInfo = true }
             )
             

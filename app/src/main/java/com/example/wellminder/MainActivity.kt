@@ -3,6 +3,7 @@ package com.example.wellminder
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.work.*
 import com.example.wellminder.data.manager.PreferenceManager
 import com.example.wellminder.ui.navigation.AppNavigation
@@ -26,6 +27,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         
         var startDest = "login"
         if (preferenceManager.isLoggedIn) {
