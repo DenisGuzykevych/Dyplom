@@ -46,20 +46,20 @@ object GoalCalculator {
         return (raw / 1000) * 1000
     }
 
-    // Повертає Triple(Білки, Жири, Вуглеводи) в грамах на основі ваги
-    fun calculateMacros(weightKg: Float, goalType: String): Triple<Float, Float, Float> {
-        // Коефіцієнти (г на кг ваги)
-        val (pCoeff, fCoeff, cCoeff) = when (goalType.uppercase()) {
-            "LOSE" -> Triple(2.0f, 0.8f, 2.0f)     // Більше білка, менше вуглеводів/жирів
-            "GAIN" -> Triple(1.8f, 1.2f, 5.0f)     // Помірний білок, більше калорій/вуглеводів
-            else -> Triple(1.5f, 1.0f, 3.0f)       // Стандарт (ПІДТРИМКА)
+    // Повертає Triple(Білки, Жири, Вуглеводи) в грамах на основі калорій
+    fun calculateMacros(targetCalories: Int, goalType: String): Triple<Float, Float, Float> {
+        // Відсоткові співвідношення макронутрієнтів
+        val (pPercent, fPercent, cPercent) = when (goalType.uppercase()) {
+            "LOSE" -> Triple(0.40f, 0.30f, 0.30f)     // Більше білка для збереження м'язів, менше вуглеводів
+            "GAIN" -> Triple(0.25f, 0.25f, 0.50f)     // Помірний білок, більше вуглеводів для енергії
+            else -> Triple(0.30f, 0.30f, 0.40f)       // Стандартна пропорція для підтримки форми
         }
 
-        val pGrams = (weightKg * pCoeff).roundToInt().toFloat()
-        val fGrams = (weightKg * fCoeff).roundToInt().toFloat()
-        val cGrams = (weightKg * cCoeff).roundToInt().toFloat()
+        val pGrams = (targetCalories * pPercent) / 4f
+        val fGrams = (targetCalories * fPercent) / 9f
+        val cGrams = (targetCalories * cPercent) / 4f
 
-        return Triple(pGrams, fGrams, cGrams)
+        return Triple(pGrams.roundToInt().toFloat(), fGrams.roundToInt().toFloat(), cGrams.roundToInt().toFloat())
     }
 
     fun calculateCaloriesFromMacros(p: Float, f: Float, c: Float): Int {

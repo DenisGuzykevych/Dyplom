@@ -78,8 +78,8 @@ class OnboardingViewModel @Inject constructor(
                     
                     val goal = preferenceManager.userGoal ?: "MAINTAIN"
                     
-                    val (targetProteins, targetFats, targetCarbs) = com.example.wellminder.util.GoalCalculator.calculateMacros(weight, goal)
-                    val targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(targetProteins, targetFats, targetCarbs)
+                    val targetCalories = com.example.wellminder.util.GoalCalculator.calculateTargetCalories(tdee, goal)
+                    val (targetProteins, targetFats, targetCarbs) = com.example.wellminder.util.GoalCalculator.calculateMacros(targetCalories, goal)
                     val targetWater = com.example.wellminder.util.GoalCalculator.calculateWaterTarget(weight)
                     val targetSteps = com.example.wellminder.util.GoalCalculator.calculateStepTarget(goal)
 

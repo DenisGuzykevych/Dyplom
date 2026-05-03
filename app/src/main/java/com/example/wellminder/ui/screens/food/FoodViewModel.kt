@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.firstOrNull
 import javax.inject.Inject
 
@@ -108,13 +109,19 @@ class FoodViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            preferenceManager.userIdFlow.collect { userId ->
+            preferenceManager.userIdFlow.collectLatest { userId ->
                 if (userId != -1L) {
-                    val goals = userDao.getUserGoals(userId)
-                    if (goals != null) {
-                        targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
-                            goals.targetProteins, goals.targetFats, goals.targetCarbs
-                        )
+                    userDao.getUserGoalsFlow(userId).collect { goals ->
+                        if (goals != null) {
+                            val cals = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(
+                                goals.targetProteins, goals.targetFats, goals.targetCarbs
+                            )
+                            if (cals > 0) {
+                                targetCalories = cals
+                            } else {
+                                targetCalories = 2000
+                            }
+                        }
                     }
                 }
             }

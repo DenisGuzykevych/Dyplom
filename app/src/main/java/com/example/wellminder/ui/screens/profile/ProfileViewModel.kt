@@ -222,8 +222,8 @@ class ProfileViewModel @Inject constructor(
             val bmr = com.example.wellminder.util.GoalCalculator.calculateBMR(weight, height, age, isMale)
             val tdee = com.example.wellminder.util.GoalCalculator.calculateTDEE(bmr)
             
-            val (targetProteins, targetFats, targetCarbs) = com.example.wellminder.util.GoalCalculator.calculateMacros(weight, goal)
-            val targetCalories = com.example.wellminder.util.GoalCalculator.calculateCaloriesFromMacros(targetProteins, targetFats, targetCarbs)
+            val targetCalories = com.example.wellminder.util.GoalCalculator.calculateTargetCalories(tdee, goal)
+            val (targetProteins, targetFats, targetCarbs) = com.example.wellminder.util.GoalCalculator.calculateMacros(targetCalories, goal)
             val targetWater = com.example.wellminder.util.GoalCalculator.calculateWaterTarget(weight)
             val targetSteps = com.example.wellminder.util.GoalCalculator.calculateStepTarget(goal)
 
