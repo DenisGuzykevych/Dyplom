@@ -56,6 +56,7 @@ class DailySummaryWorker @AssistedInject constructor(
                 
                 val dailySteps = dailyStepsDao.getStepsOneShot(dateStr, userId)
                 manualSteps = dailySteps?.manualStepCount ?: 0
+                sensorSteps = dailySteps?.sensorStepCount ?: 0 // Зберігаємо кроки крокоміра, якщо Health Connect не спрацює
                 
                 val profile = userDao.getUserProfile(userId)
                 if (profile?.isHealthConnectEnabled == true && 
@@ -65,7 +66,16 @@ class DailySummaryWorker @AssistedInject constructor(
                     val source = (applicationContext as? android.app.Application)?.getSharedPreferences("wellminder_prefs", Context.MODE_PRIVATE)
                         ?.getString("preferred_step_source", "all")
 
-                    sensorSteps = healthConnectManager.readStepsFiltered(startOfDay, endOfDay.minusMillis(1), source).toInt()
+                    try {
+                        val hcSteps = healthConnectManager.readStepsFiltered(startOfDay, endOfDay.minusMillis(1), source).toInt()
+                        if (hcSteps > 0 || source != "pedometer") {
+                            sensorSteps = hcSteps
+                        }
+                    } catch (e: Exception) {
+                        // Якщо Android обмежує фоновий доступ до Health Connect, ігноруємо помилку, 
+                        // щоб не втратити вже записані кроки в sensorSteps
+                        e.printStackTrace()
+                    }
                 }
 
                 // Зберігаємо кроки в БД для історії

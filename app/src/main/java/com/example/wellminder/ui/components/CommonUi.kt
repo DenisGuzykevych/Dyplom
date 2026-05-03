@@ -173,8 +173,7 @@ fun BottomNavigationBar(
 ) {
    NavigationBar(
        containerColor = Color.White,
-       contentColor = Color.Black,
-       modifier = Modifier.height(68.dp)
+       contentColor = Color.Black
    ) {
         NavigationBarItem(
             icon = { Icon(Icons.AutoMirrored.Rounded.DirectionsRun, contentDescription = "Home") },

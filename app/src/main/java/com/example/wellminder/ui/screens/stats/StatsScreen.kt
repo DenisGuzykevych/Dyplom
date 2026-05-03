@@ -66,7 +66,12 @@ fun StatsScreen(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = viewModel.selectedDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+            initialSelectedDateMillis = viewModel.selectedDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis <= System.currentTimeMillis()
+                }
+            }
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -274,14 +279,24 @@ fun StatsScreen(
                                 )
                             }
                             
+                            val startOfCurrentWeek = java.time.LocalDate.now().minusDays(java.time.LocalDate.now().dayOfWeek.value.toLong() - 1)
+                            val startOfSelectedWeek = viewModel.selectedDate.minusDays(viewModel.selectedDate.dayOfWeek.value.toLong() - 1)
+                            
                             IconButton(
-                                onClick = { viewModel.changeDate(7) },
-                                enabled = viewModel.selectedDate.plusDays(7) <= java.time.LocalDate.now()
+                                onClick = { 
+                                    val nextDate = viewModel.selectedDate.plusDays(7)
+                                    if (nextDate <= java.time.LocalDate.now()) {
+                                        viewModel.changeDate(7)
+                                    } else {
+                                        viewModel.onDateSelected(java.time.LocalDate.now())
+                                    }
+                                },
+                                enabled = startOfSelectedWeek < startOfCurrentWeek
                             ) {
                                 Icon(
                                     Icons.Default.KeyboardDoubleArrowRight, 
                                     contentDescription = "Week Forward", 
-                                    tint = if (viewModel.selectedDate.plusDays(7) <= java.time.LocalDate.now()) Color.Gray else Color.LightGray
+                                    tint = if (startOfSelectedWeek < startOfCurrentWeek) Color.Gray else Color.LightGray
                                 )
                             }
                         }
