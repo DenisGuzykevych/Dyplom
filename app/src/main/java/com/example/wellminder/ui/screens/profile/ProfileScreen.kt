@@ -170,19 +170,16 @@ fun ProfileScreen(
                         else -> viewModel.userProfile?.gender ?: "-"
                     }
                     UserInfoRow("Стать:", genderDisplay)
-                    UserInfoRow("Поточна вага:", "${viewModel.userProfile?.currentWeight?.toInt() ?: 0}кг")
+                    val weightFloat = viewModel.userProfile?.currentWeight ?: 0f
+                    val weightStr = if (weightFloat % 1f == 0f) weightFloat.toInt().toString() else weightFloat.toString()
+                    UserInfoRow("Поточна вага:", "${weightStr}кг")
                     val goalText = when(viewModel.userGoals?.goalType) {
                         "LOSE" -> "Схуднути"
                         "GAIN" -> "Набрати вагу"
                         else -> "Підтримувати форму"
                     }
                     UserInfoRow("Мета:", goalText)
-                    // Обчислюємо вік за датою народження
-                    val age = if (viewModel.userProfile?.dateOfBirth != null && viewModel.userProfile!!.dateOfBirth > 0) {
-                         val birthDate = java.time.Instant.ofEpochMilli(viewModel.userProfile!!.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-                         val now = java.time.LocalDate.now()
-                         java.time.Period.between(birthDate, now).years.toString()
-                    } else "0"
+                    val age = viewModel.userProfile?.age?.toString() ?: "0"
                     
                     UserInfoRow("Вік:", age)
                     UserInfoRow("Зріст:", "${viewModel.userProfile?.height ?: 0}")

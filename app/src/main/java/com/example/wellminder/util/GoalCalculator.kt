@@ -31,7 +31,7 @@ object GoalCalculator {
     }
 
     fun calculateWaterTarget(weightKg: Float): Int {
-        val raw = weightKg * 35 // 35 мл на кг
+        val raw = weightKg * 30 // 30 мл на кг (знижено за запитом для більш реалістичних показників)
         // Округлити до найближчих 100
         return (raw / 100).roundToInt() * 100
     }

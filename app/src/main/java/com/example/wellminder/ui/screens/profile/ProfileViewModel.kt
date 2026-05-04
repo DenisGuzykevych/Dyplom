@@ -174,16 +174,64 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateAccountData(newName: String) {
+    fun updateAccountData(
+        newName: String, 
+        newEmail: String, 
+        newPassword: String? = null,
+        onSuccess: () -> Unit = {}, 
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             val currentProfile = userProfile ?: return@launch
+            
+            val currentUser = appDatabase.userDao().getUserById(currentProfile.userId) ?: return@launch
+            
+            // Якщо це гість, і він вводить email, він обов'язково має ввести пароль
+            if (currentUser.isGuest && currentUser.email == null && newEmail.isNotBlank()) {
+                if (newPassword.isNullOrBlank()) {
+                    onError("Для прив'язки пошти до гостьового акаунту необхідно задати пароль")
+                    return@launch
+                }
+            }
+            
+            // Оновлюємо ім'я
             val updatedProfile = currentProfile.copy(name = newName)
             appDatabase.userDao().updateProfile(updatedProfile)
-            
-            // Оновлюємо SharedPreferences
             preferenceManager.userName = newName
             
-            fetchUserProfile() // Оновлюємо UI
+            // Оновлюємо email та пароль
+            try {
+                var userToUpdate = currentUser
+                var needsUpdate = false
+                
+                if (currentUser.email != newEmail) {
+                    userToUpdate = userToUpdate.copy(email = newEmail)
+                    needsUpdate = true
+                }
+                
+                if (!newPassword.isNullOrBlank()) {
+                    userToUpdate = userToUpdate.copy(passwordHash = newPassword)
+                    needsUpdate = true
+                }
+                
+                // Якщо був гостем і прив'язав пошту/пароль - більше не гість
+                if (userToUpdate.isGuest && userToUpdate.email != null && userToUpdate.passwordHash != null) {
+                    userToUpdate = userToUpdate.copy(isGuest = false)
+                    needsUpdate = true
+                }
+                
+                if (needsUpdate) {
+                    appDatabase.userDao().updateUser(userToUpdate)
+                    userEmail = newEmail
+                }
+                
+                fetchUserProfile() // Оновлюємо UI
+                onSuccess()
+            } catch (e: android.database.sqlite.SQLiteConstraintException) {
+                onError("Цей email вже використовується")
+            } catch (e: Exception) {
+                onError("Помилка при оновленні даних: ${e.message}")
+            }
         }
     }
 
@@ -192,22 +240,21 @@ class ProfileViewModel @Inject constructor(
             val currentProfile = userProfile ?: return@launch
             val currentGoals = userGoals ?: return@launch // Має існувати, якщо є профіль
             
-            // 1. Оновлюємо дані тіла в профілі
-            // Чи треба перераховувати дату народження з віку?
-            // Насправді ми зберігаємо дату народження. Конвертація Вік -> Дата неточна.
-            // Краще не чіпати, якщо не треба.
-            // Припустимо, що тут ми оновлюємо тільки вагу/зріст/цілі.
-            // Але якщо юзер змінив вік, мусимо оновити й дату народження.
-            // Приблизно: ДН = Сьогодні - Вік.
-            val estimatedDOB = java.time.LocalDate.now().minusYears(age.toLong())
-                .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-
             val updatedProfile = currentProfile.copy(
                 currentWeight = weight,
                 height = height,
-                dateOfBirth = estimatedDOB
+                age = age
             )
             appDatabase.userDao().updateProfile(updatedProfile)
+            
+            // Зберігаємо зміну ваги в історію, щоб графік на вкладці Активність оновився
+            appDatabase.userDao().insertWeightLog(
+                com.example.wellminder.data.local.entities.WeightLogEntity(
+                    userId = currentProfile.userId,
+                    date = System.currentTimeMillis(),
+                    weightValue = weight
+                )
+            )
             
             // Оновлюємо SharedPreferences
             preferenceManager.weight = weight

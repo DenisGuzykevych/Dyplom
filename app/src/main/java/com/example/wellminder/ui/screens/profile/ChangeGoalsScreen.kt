@@ -53,12 +53,8 @@ fun ChangeGoalsScreen(
     // Розрахунок віку, якщо немає
     // Логіка ProfileViewModel використовує estimatedDOB.
     // Поки що залишимо порожнім, якщо важко порахувати або беремо з DOB.
-    val calculatedAge = remember(currentProfile?.dateOfBirth) {
-        if (currentProfile?.dateOfBirth != null && currentProfile.dateOfBirth > 0) {
-            val birthDate = java.time.Instant.ofEpochMilli(currentProfile.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
-            val now = java.time.LocalDate.now()
-            java.time.Period.between(birthDate, now).years.toString()
-        } else ""
+    val calculatedAge = remember(currentProfile?.age) {
+        currentProfile?.age?.toString() ?: ""
     }
     var age by remember { mutableStateOf(calculatedAge) }
 

@@ -13,7 +13,8 @@ import androidx.room.PrimaryKey
             childColumns = ["userId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [androidx.room.Index("userId")]
 )
 data class UserGoalEntity(
     @PrimaryKey(autoGenerate = true)

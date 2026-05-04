@@ -20,7 +20,7 @@ class AuthRepository @Inject constructor(
         gender: String,
         height: Int,
         weight: Float,
-        birthDate: Long
+        age: Int
     ): Boolean {
         return try {
             val user = UserEntity(email = email, passwordHash = passwordHash, isGuest = false)
@@ -30,7 +30,7 @@ class AuthRepository @Inject constructor(
                 gender = gender,
                 height = height,
                 currentWeight = weight,
-                dateOfBirth = birthDate
+                age = age
             )
             val goals = UserGoalEntity(
                 userId = 0,
@@ -44,12 +44,6 @@ class AuthRepository @Inject constructor(
             preferenceManager.gender = gender
             preferenceManager.weight = weight
             preferenceManager.height = height.toFloat()
-            // Рахуємо вік приблизно, бо в налаштуваннях зберігаємо тільки число
-            // Обчислюємо вік
-           val age = java.time.Period.between(
-                java.time.Instant.ofEpochMilli(birthDate).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
-                java.time.LocalDate.now()
-            ).years
             preferenceManager.age = age
             
             true
@@ -59,7 +53,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun continueAsGuest(name: String, gender: String, height: Int, weight: Float, birthDate: Long): Boolean {
+    suspend fun continueAsGuest(name: String, gender: String, height: Int, weight: Float, age: Int): Boolean {
         return try {
             val user = UserEntity(isGuest = true)
             val profile = UserProfileEntity(
@@ -68,7 +62,7 @@ class AuthRepository @Inject constructor(
                 gender = gender,
                 height = height,
                 currentWeight = weight,
-                dateOfBirth = birthDate
+                age = age
             )
              val goals = UserGoalEntity(
                 userId = 0,
@@ -79,11 +73,6 @@ class AuthRepository @Inject constructor(
             val userId = userDao.registerUser(user, profile, goals)
             preferenceManager.userId = userId
             preferenceManager.userName = name
-             // Calculate age
-           val age = java.time.Period.between(
-                java.time.Instant.ofEpochMilli(birthDate).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
-                java.time.LocalDate.now()
-            ).years
             preferenceManager.age = age
             true
         } catch (e: Exception) {
@@ -103,11 +92,7 @@ class AuthRepository @Inject constructor(
                  preferenceManager.gender = profile.gender
                  preferenceManager.weight = profile.currentWeight
                  preferenceManager.height = profile.height.toFloat()
-                  val age = java.time.Period.between(
-                        java.time.Instant.ofEpochMilli(profile.dateOfBirth).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
-                        java.time.LocalDate.now()
-                    ).years
-                preferenceManager.age = age
+                 preferenceManager.age = profile.age
                 preferenceManager.isOnboardingComplete = true // Профіль є, тому онбордінг пропускаємо
              }
             user

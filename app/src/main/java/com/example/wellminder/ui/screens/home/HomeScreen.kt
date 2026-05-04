@@ -119,9 +119,9 @@ fun HomeScreen(
                 title = "Норма води",
                 icon = Icons.Rounded.WaterDrop,
                 iconColor = Color(0xFF00C2FF),
-                progress = viewModel.waterIntake.toFloat() / waterTarget.toFloat(),
+                progress = (viewModel.waterIntake.toFloat() / waterTarget.toFloat()).coerceAtMost(1f),
                 progressColor = Color(0xFF00C2FF),
-                subtitle = "Випито ${viewModel.waterIntake / 1000f}л\nз ${waterTarget / 1000}л",
+                subtitle = "Випито ${viewModel.waterIntake / 1000f}л\nз ${waterTarget / 1000f}л",
                 onClick = { safeClick { showWaterOverlay = true } }
             )
             
@@ -131,7 +131,7 @@ fun HomeScreen(
                 title = "Норма калорій",
                 icon = Icons.Rounded.Bolt,
                 iconColor = Color(0xFFFFC107),
-                progress = if (targetCalories > 0) consumedCalories.toFloat() / targetCalories.toFloat() else 0f,
+                progress = if (targetCalories > 0) (consumedCalories.toFloat() / targetCalories.toFloat()).coerceAtMost(1f) else 0f,
                 progressColor = Color(0xFF4CAF50), // Зелений для калорій
                 subtitle = "Спожито ${consumedCalories}ккал\nз ${targetCalories}ккал",
                 onClick = { safeClick { showCaloriesOverlay = true } }
@@ -143,7 +143,7 @@ fun HomeScreen(
                 title = "Норма кроків",
                 icon = Icons.AutoMirrored.Rounded.DirectionsRun,
                 iconColor = Color(0xFF757575),
-                progress = stepCount.toFloat() / stepTarget.toFloat(),
+                progress = (stepCount.toFloat() / stepTarget.toFloat()).coerceAtMost(1f),
                 progressColor = Color(0xFFFF002E),
                 subtitle = "Пройдено $stepCount кроків\nз $stepTarget",
                 onClick = { safeClick { showStepsOverlay = true } },

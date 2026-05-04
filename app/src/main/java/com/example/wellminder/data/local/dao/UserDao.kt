@@ -27,6 +27,9 @@ interface UserDao {
     @Update
     suspend fun updateGoals(goals: UserGoalEntity)
 
+    @Update
+    suspend fun updateUser(user: UserEntity)
+
     // Запити на отримання даних
     @Query("SELECT * FROM users WHERE email = :email LIMIT 1")
     suspend fun getUserByEmail(email: String): UserEntity?

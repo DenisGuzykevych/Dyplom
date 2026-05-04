@@ -105,7 +105,7 @@ fun WaterOverlay(
                     
                     // Target Text
                     Text(
-                        text = "Норма: ${targetIntake / 1000}л",
+                        text = "Норма: ${targetIntake / 1000f}л",
                         style = Typography.titleMedium.copy(fontWeight = FontWeight.Normal),
                         color = Color.Black,
                         fontSize = 20.sp

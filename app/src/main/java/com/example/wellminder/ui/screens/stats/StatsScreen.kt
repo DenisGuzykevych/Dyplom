@@ -365,8 +365,8 @@ fun StatsScreen(
                          Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                              StatCircle(
                                  label = "Вода",
-                                 value = "${viewModel.waterIntake / 1000f}л",
-                                 subValue = "з ${viewModel.waterTarget / 1000}л",
+                                 value = "${if (viewModel.waterIntake % 1000 == 0) (viewModel.waterIntake / 1000).toString() else "%.1f".format(java.util.Locale.US, viewModel.waterIntake / 1000f)}л",
+                                 subValue = "з ${if (viewModel.waterTarget % 1000 == 0) (viewModel.waterTarget / 1000).toString() else "%.1f".format(java.util.Locale.US, viewModel.waterTarget / 1000f)}л",
                                  progress = if (viewModel.waterTarget > 0) viewModel.waterIntake.toFloat() / viewModel.waterTarget.toFloat() else 0f,
                                  color = Color(0xFF00C2FF) // Blue
                              )

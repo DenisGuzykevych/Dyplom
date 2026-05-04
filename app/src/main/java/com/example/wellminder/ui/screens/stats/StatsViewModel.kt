@@ -59,6 +59,18 @@ class StatsViewModel @Inject constructor(
                     // Let's keep graph fixed to "Recent History" (Today).
                     launch { loadWeeklyWeight(userId) }
                     
+                    // Спостерігаємо за змінами в профілі (щоб реагувати на зміну ваги з інших вкладок)
+                    launch {
+                        userDao.getUserProfileFlow(userId).collect { profile ->
+                            if (profile != null) {
+                                if (currentWeight != profile.currentWeight) {
+                                    currentWeight = profile.currentWeight
+                                    launch { loadWeeklyWeight(userId) }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Observe Goals
                     launch {
                         userDao.getUserGoalsFlow(userId).collect { goals ->
@@ -246,6 +258,7 @@ class StatsViewModel @Inject constructor(
                     val profile = userDao.getUserProfile(userId)
                     if (profile != null) {
                         userDao.updateProfile(profile.copy(currentWeight = newWeight))
+                        preferenceManager.weight = newWeight
                         currentWeight = newWeight
                         launch { loadWeeklyWeight(userId) } // Refresh graph
                         _uiEvent.emit(UiEvent.ShowSnackbar("Вага збережена успішно"))

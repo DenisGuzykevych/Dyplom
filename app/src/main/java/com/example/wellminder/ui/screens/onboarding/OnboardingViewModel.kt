@@ -45,17 +45,12 @@ class OnboardingViewModel @Inject constructor(
                 val currentProfile = if (userId != -1L) userDao.getUserProfile(userId) else userDao.getLastUserProfile() 
                 
                 if (currentProfile != null) {
-                    // Calculate approximate DOB
-                    val now = LocalDate.now()
-                    val birthDate = now.minusYears(age.toLong())
-                    val dobTimestamp = birthDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-
                     val updatedProfile = currentProfile.copy(
                         userId = userId.takeIf { it != -1L } ?: currentProfile.userId,
                         gender = preferenceManager.gender ?: "Male",
                         currentWeight = weight,
                         height = height.toInt(),
-                        dateOfBirth = dobTimestamp
+                        age = age
                     )
                     userDao.updateProfile(updatedProfile)
                     

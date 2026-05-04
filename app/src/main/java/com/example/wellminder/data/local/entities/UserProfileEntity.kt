@@ -14,7 +14,8 @@ import androidx.room.PrimaryKey
             childColumns = ["userId"],
             onDelete = ForeignKey.CASCADE
         )
-    ]
+    ],
+    indices = [androidx.room.Index("userId")]
 )
 data class UserProfileEntity(
     @PrimaryKey(autoGenerate = true)
@@ -24,7 +25,7 @@ data class UserProfileEntity(
     val gender: String, // "Male" (Чоловік), "Female" (Жінка) тощо
     val height: Int, // см
     val currentWeight: Float, // кг
-    val dateOfBirth: Long, // Дата народження (timestamp)
+    val age: Int, // Вік
     @ColumnInfo(name = "is_health_connect_enabled") val isHealthConnectEnabled: Boolean = false,
     @ColumnInfo(name = "health_connect_sync_start_time") val healthConnectSyncStartTime: Long? = null
 )

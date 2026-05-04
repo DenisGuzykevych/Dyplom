@@ -22,7 +22,6 @@ class AuthViewModel @Inject constructor(
     var tempGender: String = "Male"
     var tempWeight: Float = 60f
     var tempHeight: Int = 170
-    var tempBirthDate: Long = 0L
 
     fun register(email: String, passwordHash: String) {
         viewModelScope.launch {
@@ -34,7 +33,7 @@ class AuthViewModel @Inject constructor(
                 gender = tempGender,
                 height = tempHeight,
                 weight = tempWeight,
-                birthDate = tempBirthDate
+                age = 20
             )
             if (success) {
                 _authState.value = AuthState.Success
@@ -64,7 +63,7 @@ class AuthViewModel @Inject constructor(
                 gender = tempGender,
                 height = tempHeight,
                 weight = tempWeight,
-                birthDate = tempBirthDate
+                age = 20
             )
              if (success) {
                 _authState.value = AuthState.Success

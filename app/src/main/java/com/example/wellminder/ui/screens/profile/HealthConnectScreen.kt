@@ -310,7 +310,7 @@ fun SourcesAndJournalTab(viewModel: ProfileViewModel) {
                                 color = Color.DarkGray,
                                 modifier = Modifier.padding(vertical = 4.dp)
                             )
-                            Divider(color = Color.LightGray.copy(alpha = 0.3f))
+                            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
                         }
                     }
                 }
